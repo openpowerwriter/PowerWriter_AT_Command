@@ -1,0 +1,5 @@
+# ninja log v5
+0	227	6777579749020964	CMakeFiles/powerwriter_at_commander.dir/main.cpp.obj	397631e26cf8cc91
+2	217	6777596667878083	CMakeFiles/powerwriter_at_commander.dir/powerwriter_at_main.cpp.obj	fbd9430f658272cb
+217	456	6777596670228446	powerwriter_at_commander.exe	48a3f277f1790c0d
+0	118	6777601840619560	build.ninja	605018f1b193d821

@@ -46,8 +46,7 @@ static const char *S_POWERWRITER_AT_LOG_PREFIX[__LOG_TYPE_MAX] = {
 
 /* exports api */
 // print log
-#define powerwriter_at_log(type, format, ...) \
-	printf("[%s]:" format, S_POWERWRITER_AT_LOG_PREFIX[type], ##__VA_ARGS__)
+#define powerwriter_at_log(type, format, ...) printf("[%s]:"format,S_POWERWRITER_AT_LOG_PREFIX[type],##__VA_ARGS__)
 #else
 #define powerwriter_at_log(type, format, ...)
 #endif

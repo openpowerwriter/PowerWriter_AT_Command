@@ -34,6 +34,7 @@
 #define PW_PACKAGE_SIZE 256    // Buffer size of block data
 #define PW_OB_MAX 1024         // Target chip option byte MAX size;
 #define PW_PROJECT_PWD_SIZE 16 // PowerWriter project password max size
+#define PW_ENUM_MAX INT32_MAX  // PowerWriter default enum max value
 
 #ifdef __cplusplus
 extern "C"
@@ -95,12 +96,12 @@ extern "C"
                               //...
 
         // State instruction
-        ATCmdStatusOK = (UINT32_MAX - 100), // Status Ok
-        ATCmdStatusError,                   // Status error with error code
-        ATCmdStatusProgress,                // Status busy (progress)
+        ATCmdStatusOK = (PW_ENUM_MAX - 100), // Status Ok
+        ATCmdStatusError,                    // Status error with error code
+        ATCmdStatusProgress,                 // Status busy (progress)
 
         // Align to 4 bytes, compiler independent
-        _ATCmdTypeMax = UINT32_MAX
+        _ATCmdTypeMax = PW_ENUM_MAX
     } E_ATcmdType;
 
 /* command payload */
@@ -266,7 +267,7 @@ extern "C"
         DIR_CDC2UART, // Forwarding from USB to UART
         DIR_UART2CDC, // Forwarding from UART to USB
 
-        _DIR_MAX_ = UINT32_MAX
+        _DIR_MAX_ = PW_ENUM_MAX
     } S_ATCmdBroadcastDirection;
 
     typedef struct S_ATCmdBroadcast
