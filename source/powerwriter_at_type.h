@@ -26,14 +26,14 @@
 #include "powerwriter_at_config.h"
 
 // PowerWriter open communication interface types
-#define PW_OEM_LENGTH 8       // PowerWriter OEM length
-#define PW_SN_LENGTH 32       // PowerWriter SN length
-#define PW_VERSION_LENGTH 8   // PowerWriter version information length
-#define PW_TARGET_NAME_MAX 16 // PowerWriter target name max length
-#define PW_TARGET_ID_MAX 16   // Target chip ID MAX size
-#define PW_PACKAGE_SIZE 256     // Buffer size of block data
-#define PW_OB_MAX 1024        // Target chip option byte MAX size;
-#define PW_PROJECT_PWD_SIZE		// PowerWriter project password max size 
+#define PW_OEM_LENGTH 8        // PowerWriter OEM length
+#define PW_SN_LENGTH 32        // PowerWriter SN length
+#define PW_VERSION_LENGTH 8    // PowerWriter version information length
+#define PW_TARGET_NAME_MAX 16  // PowerWriter target name max length
+#define PW_TARGET_ID_MAX 16    // Target chip ID MAX size
+#define PW_PACKAGE_SIZE 256    // Buffer size of block data
+#define PW_OB_MAX 1024         // Target chip option byte MAX size;
+#define PW_PROJECT_PWD_SIZE 16 // PowerWriter project password max size
 
 #ifdef __cplusplus
 extern "C"
@@ -79,9 +79,9 @@ extern "C"
         ATCmdGetProjectInfo = 200, // Get project info from PowerWriter
         ATCmdRspProjectInfo,
 
-        ATCmdLoadProject,   // Load project to PowerWriter
-		ATCmdLoadProjectSend,	//Load project to PowerWriter send package
-        ATCmdDisableProject, // Delete project from PowerWriter (Mark as invalid)
+        ATCmdLoadProject,     // Load project to PowerWriter
+        ATCmdLoadProjectSend, // Load project to PowerWriter send package
+        ATCmdDisableProject,  // Delete project from PowerWriter (Mark as invalid)
 
         ATCmdStartOffline,     // Start offline programming
         ATCmdGetOfflineStatus, // Get offline programming status
@@ -102,8 +102,6 @@ extern "C"
         // Align to 4 bytes, compiler independent
         _ATCmdTypeMax = UINT32_MAX
     } E_ATcmdType;
-
-	
 
 /* command payload */
 #pragma pack(push, 1)
@@ -127,13 +125,13 @@ extern "C"
         S_ATCmdEraseTarget,
         S_ATCmdReadTargetOptionByte,
         S_ATCmdWriteTargetVendorOptionByte,
-		S_ATCmdGetProjectInfo,
+        S_ATCmdGetProjectInfo,
         S_ATCmdWriteTargetUserOptionByte,
-		S_ATCmdDisableProject,
-		S_ATCmdStartOffline,
-		S_ATCmdGetOfflineStatus,
-		S_ATCmdFactoryRunSRAMFW,
-		S_ATCmdFactoryRunFlashFW;
+        S_ATCmdDisableProject,
+        S_ATCmdStartOffline,
+        S_ATCmdGetOfflineStatus,
+        S_ATCmdFactoryRunSRAMFW,
+        S_ATCmdFactoryRunFlashFW;
 
     // ATCmdStatusProgress
     typedef struct S_ATCmdStatusProgress
@@ -225,8 +223,8 @@ extern "C"
     // Write target chip memory
     typedef struct S_ATCmdTargetMemory
     {
-        uint32_t m_address;              // Current data address
-        uint32_t m_size;                 // Current data size
+        uint32_t m_address;                // Current data address
+        uint32_t m_size;                   // Current data size
         uint8_t m_buffer[PW_PACKAGE_SIZE]; // Current data buffer (fixed length)
     } S_ATCmdRspTargetMemory,
         S_ATCmdWriteTargetMemory;
@@ -238,45 +236,47 @@ extern "C"
         uint8_t m_OBData[PW_OB_MAX]; // Option byte data buffer
     } S_ATCmdRspTargetOptionByte;
 
-	// Respone offline project infomation
-	typedef struct S_ATCmdRspProjectInfo{
-		uint8_t		m_activate;			// 0 : Inactivate 1: Activate
-		uint32_t	m_projectSize;		// Offline project size
-		uint32_t	m_projectcrc32;		// Offline project crc32
-	}S_ATCmdRspProjectInfo;
-	
-	//Load offline project to PowerWriter
-	typedef struct S_ATCmdLoadProject
-	{
-		uint8_t			m_password[PW_PROJECT_PWD_SIZE]		//Project password 
-		uint32_t		m_projectSize;						//Project Size
-		uint32_t		m_projectCRC32;						//Project crc32
-	}S_ATCmdLoadProject;
-	
-	//Load offline project to PowerWriter send
-	typedef struct S_ATCmdLoadProjectSend
-	{
-		uint32_t		m_offset;							//offset of project
-		uint32_t		m_Size;								//currrent acitvate 
-		uint8_t			m_data[PW_PACKAGE_SIZE];			//data buffer
-	}S_ATCmdLoadProjectSend;
-	
-	//Broadcast
-	typedef enum S_ATCmdBroadcastDirection{
-		DIR_CDC2UART,										//Forwarding from USB to UART
-		DIR_UART2CDC,										//Forwarding from UART to USB
-		
-		_DIR_MAX_ = UINT32_MAX
-	}S_ATCmdBroadcastDirection;
-	
-	typedef struct S_ATCmdBroadcast
-	{
-		uint8_t					m_keepATFrame;				//0 : Forwarding valid data, 1: forwarding Full AT frame data
-		S_ATCmdBroadcastDirection	m_dirType;				//Direction
-		uint32_t				m_size;						//Activate size
-		uint8_t					m_data[PW_PACKAGE_SIZE]		//data
-	}S_ATCmdBroadcast;
-	
+    // Respone offline project infomation
+    typedef struct S_ATCmdRspProjectInfo
+    {
+        uint8_t m_activate;      // 0 : Inactivate 1: Activate
+        uint32_t m_projectSize;  // Offline project size
+        uint32_t m_projectcrc32; // Offline project crc32
+    } S_ATCmdRspProjectInfo;
+
+    // Load offline project to PowerWriter
+    typedef struct S_ATCmdLoadProject
+    {
+        uint8_t m_password[PW_PROJECT_PWD_SIZE]; // Project password
+        uint32_t m_projectSize;                  // Project Size
+        uint32_t m_projectCRC32;                 // Project crc32
+    } S_ATCmdLoadProject;
+
+    // Load offline project to PowerWriter send
+    typedef struct S_ATCmdLoadProjectSend
+    {
+        uint32_t m_offset;               // offset of project
+        uint32_t m_Size;                 // currrent acitvate
+        uint8_t m_data[PW_PACKAGE_SIZE]; // data buffer
+    } S_ATCmdLoadProjectSend;
+
+    // Broadcast
+    typedef enum S_ATCmdBroadcastDirection
+    {
+        DIR_CDC2UART, // Forwarding from USB to UART
+        DIR_UART2CDC, // Forwarding from UART to USB
+
+        _DIR_MAX_ = UINT32_MAX
+    } S_ATCmdBroadcastDirection;
+
+    typedef struct S_ATCmdBroadcast
+    {
+        uint8_t m_keepATFrame;               // 0 : Forwarding valid data, 1: forwarding Full AT frame data
+        S_ATCmdBroadcastDirection m_dirType; // Direction
+        uint32_t m_size;                     // Activate size
+        uint8_t m_data[PW_PACKAGE_SIZE]      // data
+    } S_ATCmdBroadcast;
+
 #pragma pack(pop)
 
     // PowerWriter AT command proprety (union)
@@ -303,20 +303,19 @@ extern "C"
         S_ATCmdRspTargetOptionByte m_ATCmdRspTargetOptionByte;
         S_ATCmdWriteTargetVendorOptionByte m_ATCmdWriteTargetVendorOptionByte;
         S_ATCmdWriteTargetUserOptionByte m_ATCmdWriteTargetUserOptionByte;
-		
-		S_ATCmdGetProjectInfo	m_ATCmdGetProjectInfo;
-		S_ATCmdRspProjectInfo	m_ATCmdRspProjectInfo;
-		S_ATCmdLoadProject		m_ATCmdLoadProject;
-		S_ATCmdLoadProjectSend	m_ATCmdLoadProjectSend;
-		S_ATCmdDisableProject	m_ATCmdDisableProject;
-		S_ATCmdStartOffline		m_ATCmdStartOffline;
-		S_ATCmdGetOfflineStatus	m_ATCmdGetOfflineStatus;
-		
-		
-		S_ATCmdFactoryRunSRAMFW		m_ATCmdFactoryRunSRAMFW;
-		S_ATCmdFactoryRunFlashFW	m_ATCmdFactoryRunSRAMFW;
-		
-		S_ATCmdBroadcast	m_ATCmdBroadcast;
+
+        S_ATCmdGetProjectInfo m_ATCmdGetProjectInfo;
+        S_ATCmdRspProjectInfo m_ATCmdRspProjectInfo;
+        S_ATCmdLoadProject m_ATCmdLoadProject;
+        S_ATCmdLoadProjectSend m_ATCmdLoadProjectSend;
+        S_ATCmdDisableProject m_ATCmdDisableProject;
+        S_ATCmdStartOffline m_ATCmdStartOffline;
+        S_ATCmdGetOfflineStatus m_ATCmdGetOfflineStatus;
+
+        S_ATCmdFactoryRunSRAMFW m_ATCmdFactoryRunSRAMFW;
+        S_ATCmdFactoryRunFlashFW m_ATCmdFactoryRunSRAMFW;
+
+        S_ATCmdBroadcast m_ATCmdBroadcast;
 
         S_ATCmdStatusOK m_ATCmdStatusOk;
         S_ATCmdStatusError m_ATCmdStatusError;
