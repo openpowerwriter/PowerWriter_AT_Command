@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "powerwriter_at_porting.h": "c",
+        "powerwriter_at_config.h": "c"
+    }
+}

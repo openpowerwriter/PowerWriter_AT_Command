@@ -1,0 +1,14 @@
+# ninja log v5
+0	8	0	clean	b72c21c3e92959a
+1	76	6770673838660564	CMakeFiles/powerwriter_at_console.dir/main.c.obj	c0652a8ae38ffb60
+7	73	6770680956040273	CMakeFiles/powerwriter_at_console.dir/6272405f4542e0f79a81026230449d41/PowerWriterAT/source/powerwriter_at_encrypt.c.obj	2cfbe288203c6fc2
+59	125	6770736853369566	powerwriter_at_console.exe	7b1b5d21667da9a1
+0	121	6770765334163720	build.ninja	adc9e518ecad0523
+1	72	6770680956040273	CMakeFiles/powerwriter_at_console.dir/6272405f4542e0f79a81026230449d41/PowerWriterAT/source/powerwriter_at_porting.c.obj	d9729b39fa9649b5
+12	80	6770699982890076	CMakeFiles/powerwriter_at_console.dir/6272405f4542e0f79a81026230449d41/PowerWriterAT/source/powerwriter_at_samples.c.obj	69c5f5799f0b403
+1	92	6770764308333719	CMakeFiles/powerwriter_at_console.dir/6272405f4542e0f79a81026230449d41/PowerWriterAT/source/powerwriter_at_cert.c.obj	cb089630bf71e304
+1	59	6770736852729574	CMakeFiles/powerwriter_at_console.dir/6272405f4542e0f79a81026230449d41/PowerWriterAT/source/3rd/crc/crc32.c.obj	6862fc4469ab87b2
+2	105	6770772135898486	CMakeFiles/powerwriter_at_console.dir/6272405f4542e0f79a81026230449d41/PowerWriterAT/source/3rd/aes/aes.c.obj	65b780fa0714b0c3
+106	199	6770772136818484	powerwriter_at_console.exe	cad818a2e9048b55
+9	1091	6770794078161979	CMakeFiles/powerwriter_at_console.dir/6272405f4542e0f79a81026230449d41/PowerWriterAT/source/powerwriter_at_cert.c.obj	cb089630bf71e304
+1091	1404	6770794081272109	powerwriter_at_console.exe	cad818a2e9048b55
