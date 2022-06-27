@@ -4,7 +4,7 @@
  *
  * PowerWriter AT
  * Copyright (c) 2009-2021, ICWorkshop Limited, All Rights Reserved
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License.
@@ -23,14 +23,15 @@
 #define __powerwriter_at_CONFIG_h
 
 #include <stdint.h>
+#include <string.h>
 
 // The global control
-#define POWERWRITER_AT_LOGGER_ENABLE  /* Enable Logger       */
+#define POWERWRITER_AT_LOGGER_ENABLE /* Enable Logger       */
 //#define POWERWRITER_AT_HWCRC_ENABLE /* Use hardware CRC32  */
 #define POWERWRITER_AT_ENCRYPT_ENABLE /* Enable Data Encrypt */
 
-//Const defined
-#define POWERWRITER_AT_PACKAGE_ALIGN    16  /* package align size */
+// Const defined
+#define POWERWRITER_AT_PACKAGE_ALIGN 16 /* package align size */
 
 // AES128-CBC Config
 #if defined(POWERWRITER_AT_ENCRYPT_ENABLE)
@@ -41,5 +42,44 @@ static uint8_t m_at_encrypt_key[] = {0xf1, 0xa5, 0xa4, 0x00, 0xc1, 0xbc, 0x99, 0
 // CA511B6819D6442A7B772A0C66C31282
 static uint8_t m_at_encrypt_iv_[] = {0xca, 0x51, 0x1b, 0x68, 0x19, 0xd6, 0x44, 0x2a, 0x7b, 0x77, 0x2a, 0x0c, 0x66, 0xc3, 0x12, 0x82};
 #endif
+
+// PowerWriter open communication interface types
+/* Do not try to change the following definitions !!!! */
+#define PW_OEM_LENGTH 8        // PowerWriter OEM length
+#define PW_SN_LENGTH 32        // PowerWriter SN length
+#define PW_VERSION_LENGTH 8    // PowerWriter version information length
+#define PW_TARGET_NAME_MAX 16  // PowerWriter target name max length
+#define PW_TARGET_ID_MAX 16    // Target chip ID MAX size
+#define PW_PACKAGE_SIZE 256    // Buffer size of block data
+#define PW_OB_MAX 1024         // Target chip option byte MAX size;
+#define PW_PROJECT_PWD_SIZE 16 // PowerWriter project password max size
+#define PW_ENUM_MAX INT32_MAX  // PowerWriter default enum max value
+#define PW_AT_CACHE_CMDS_MIN 1 // The number of instructions allowed to be cached ( >= 1)
+
+#define PW_AT_DEFAULT_BAUDRATE 9600 // PowerWriter AT command default baud rate
+
+/* multi threading */
+#ifndef __arm__
+//#include <thread>
+//#include <mutex>
+#define MACRO_THREAD_TYPE     // std::mutex	m_thread_lock;
+#define MACRO_THREAD_LOCK(ch) // std::lock_guard<std::mutex> m_thread_mutex(ch->m_ATConfig.m_thread_lock);
+#define MACRO_THREAD_EXIT
+#else
+#define MACRO_THREAD_TYPE     /* Threads locked to your operating system!  */
+#define MACRO_THREAD_LOCK(ch) /* Threads locked to your operating system! */
+#define MACRO_THREAD_EXIT     /* Threads locked to your operating system! */
+#endif                        // ! __arm__
+
+/* Macro utils */
+#define AT_CHECK_PARAM(CH, RET) \
+    if (NULL == CH)             \
+    {                           \
+        return RET;             \
+    }
+#define AT_CHECK_PARAM_VOID(CH) AT_CHECK_PARAM(CH, )
+
+#define ZERO(obj) memset(&obj, 0, sizeof(obj))
+#define ZERO_PTR(p_obj) memset(p_obj, 0, sizeof(*p_obj))
 
 #endif

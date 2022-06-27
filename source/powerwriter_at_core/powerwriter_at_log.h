@@ -4,7 +4,7 @@
  *
  * PowerWriter AT
  * Copyright (c) 2009-2021, ICWorkshop Limited, All Rights Reserved
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ static const char *S_POWERWRITER_AT_LOG_PREFIX[__LOG_TYPE_MAX] = {
 
 /* exports api */
 // print log
-#define powerwriter_at_log(type, format, ...) printf("[%s]:"format,S_POWERWRITER_AT_LOG_PREFIX[type],##__VA_ARGS__)
+#define powerwriter_at_log(type, format, ...) printf("[%s]:" format,S_POWERWRITER_AT_LOG_PREFIX[type],##__VA_ARGS__)
 #else
 #define powerwriter_at_log(type, format, ...)
 #endif

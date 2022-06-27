@@ -4,7 +4,7 @@
  *
  * PowerWriter AT
  * Copyright (c) 2009-2021, ICWorkshop Limited, All Rights Reserved
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License.
@@ -30,6 +30,26 @@ extern "C"
 #endif
 
 #include "powerwriter_at_log.h"
+
+  /* export api for powerwriter AT commander */
+  // Run PowerWriter AT command self benchmark
+  extern bool powerwriter_at_benchmark(S_ATChannel *ch,
+      bool encrypt,
+      ATCmdStreamOut pfDataOut,
+      ATCmdEventOut pfEvent);
+  // Initial PowerWriter AT commander
+  extern bool powerwriter_at_init(S_ATChannel *ch,
+      bool encrypt,
+      ATCmdStreamOut  pfDataOut,
+      ATCmdEventOut  pfEvent);
+  // Fill data to PowerWriter AT commander
+  extern void powerwriter_at_datain(S_ATChannel *ch,
+      void *data,
+      size_t size);
+	// Get recevied frame object
+	extern const S_ATCmdFrame * powerwriter_at_received_frame(S_ATChannel *ch);
+	// Get last error code
+	extern E_ATCmdError powerwriter_at_last_error(S_ATChannel *ch);
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "powerwriter_at_core",
+		"source" : "E:/MainProjects/2022/PowerWriter_AT_Command/source/powerwriter_at_core"
+	}
+}

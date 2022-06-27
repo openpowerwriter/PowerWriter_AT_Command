@@ -4,7 +4,7 @@
  *
  * PowerWriter AT
  * Copyright (c) 2009-2021, ICWorkshop Limited, All Rights Reserved
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License.
@@ -28,7 +28,7 @@
  * 			data	:The object data
  * 			size	:The object size
  * 			encrypt	:true for encrypt, otherwise for decrypt
- * @retval 	True indicates success
+ * @RetVal 	True indicates success
  */
 
 bool powerwriter_at_encrypt(void *data, size_t size, bool encrypt)
@@ -57,7 +57,7 @@ bool powerwriter_at_encrypt(void *data, size_t size, bool encrypt)
  * @param
  * 			object	:The object data
  * 			size	:The object size
- * @retval 	crc32 value
+ * @RetVal 	crc32 value
  */
 uint32_t powerwriter_at_crc32(const void * object, size_t size)
 {
@@ -70,6 +70,6 @@ uint32_t powerwriter_at_crc32(const void * object, size_t size)
 */
 #error "You must implement the hardware AES128-CBC on the current platform"
 #else
-	return crc32(object,size);
+	return crc32(object,(int )size);
 #endif
 }

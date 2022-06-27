@@ -1,0 +1,102 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.21"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "powerwriter_at_core",
+					"jsonFile" : "directory-powerwriter_at_core-Debug-ffa43dcf3f08576f7877.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.21"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "E:/MainProjects/2022/PowerWriter_AT_Command/source/powerwriter_at_core",
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "powerwriter_at_commander",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "powerwriter_at_core",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "powerwriter_at_commander::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-powerwriter_at_commander-Debug-bd8c1d36762874fedf0b.json",
+					"name" : "powerwriter_at_commander",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "powerwriter_at_core::@bb843a21fa09242cd03c",
+					"jsonFile" : "target-powerwriter_at_core-Debug-aa1f6062c803b6fa3c94.json",
+					"name" : "powerwriter_at_core",
+					"projectIndex" : 1
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "E:/MainProjects/2022/PowerWriter_AT_Command/source/powerwriter_at_commander/cmake-build-debug",
+		"source" : "E:/MainProjects/2022/PowerWriter_AT_Command/source/powerwriter_at_commander"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.21)
 project(powerwriter_at_core)
 
 add_library(powerwriter_at_core
+		./powerwriter_at_error.h
+		./powerwriter_at_api.c
         ./powerwriter_at_api.h
 		./powerwriter_at_cert.h
 		./powerwriter_at_cert.c

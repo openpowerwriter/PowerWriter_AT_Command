@@ -1,0 +1,118 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="powerwriter_at_core">
+      <UniqueIdentifier>{fcc4cde7-de27-44ee-a8c9-56681054acc9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="powerwriter_at_app">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="serial_port">
+      <UniqueIdentifier>{1283b37e-b301-4a8e-8f69-6ab5a12fe48d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="powerwriter_at_core\3rd">
+      <UniqueIdentifier>{9bae1fa9-89a8-47ae-80dc-94e0c1051a76}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="powerwriter_at_core\3rd\aes">
+      <UniqueIdentifier>{1b294b3e-a338-4e30-8599-ab6f8d8e740f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="powerwriter_at_core\3rd\crc">
+      <UniqueIdentifier>{577f4cd7-ee2f-4ed3-ae86-1fa7841fbd69}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="powerwriter_at_commander.cpp">
+      <Filter>powerwriter_at_app</Filter>
+    </ClCompile>
+    <ClCompile Include="CSerialPort\SerialPort.cpp">
+      <Filter>serial_port</Filter>
+    </ClCompile>
+    <ClCompile Include="CSerialPort\SerialPortBase.cpp">
+      <Filter>serial_port</Filter>
+    </ClCompile>
+    <ClCompile Include="CSerialPort\SerialPortInfo.cpp">
+      <Filter>serial_port</Filter>
+    </ClCompile>
+    <ClCompile Include="CSerialPort\SerialPortInfoBase.cpp">
+      <Filter>serial_port</Filter>
+    </ClCompile>
+    <ClCompile Include="CSerialPort\SerialPortInfoWinBase.cpp">
+      <Filter>serial_port</Filter>
+    </ClCompile>
+    <ClCompile Include="CSerialPort\SerialPortWinBase.cpp">
+      <Filter>serial_port</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\powerwriter_at_core\powerwriter_at_api.c">
+      <Filter>powerwriter_at_core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\powerwriter_at_core\powerwriter_at_cert.c">
+      <Filter>powerwriter_at_core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\powerwriter_at_core\powerwriter_at_samples.c">
+      <Filter>powerwriter_at_core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\powerwriter_at_core\3rd\aes\aes.c">
+      <Filter>powerwriter_at_core\3rd\aes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\powerwriter_at_core\3rd\crc\crc32.c">
+      <Filter>powerwriter_at_core\3rd\crc</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CSerialPort\osplatformutil.h">
+      <Filter>serial_port</Filter>
+    </ClInclude>
+    <ClInclude Include="CSerialPort\SerialPort.h">
+      <Filter>serial_port</Filter>
+    </ClInclude>
+    <ClInclude Include="CSerialPort\SerialPort_global.h">
+      <Filter>serial_port</Filter>
+    </ClInclude>
+    <ClInclude Include="CSerialPort\SerialPortBase.h">
+      <Filter>serial_port</Filter>
+    </ClInclude>
+    <ClInclude Include="CSerialPort\SerialPortInfo.h">
+      <Filter>serial_port</Filter>
+    </ClInclude>
+    <ClInclude Include="CSerialPort\SerialPortInfoBase.h">
+      <Filter>serial_port</Filter>
+    </ClInclude>
+    <ClInclude Include="CSerialPort\SerialPortInfoWinBase.h">
+      <Filter>serial_port</Filter>
+    </ClInclude>
+    <ClInclude Include="CSerialPort\SerialPortWinBase.h">
+      <Filter>serial_port</Filter>
+    </ClInclude>
+    <ClInclude Include="CSerialPort\sigslot.h">
+      <Filter>serial_port</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\powerwriter_at_core\powerwriter_at_api.h">
+      <Filter>powerwriter_at_core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\powerwriter_at_core\powerwriter_at_cert.h">
+      <Filter>powerwriter_at_core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\powerwriter_at_core\powerwriter_at_config.h">
+      <Filter>powerwriter_at_core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\powerwriter_at_core\powerwriter_at_error.h">
+      <Filter>powerwriter_at_core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\powerwriter_at_core\powerwriter_at_log.h">
+      <Filter>powerwriter_at_core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\powerwriter_at_core\powerwriter_at_type.h">
+      <Filter>powerwriter_at_core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\powerwriter_at_core\3rd\aes\aes.h">
+      <Filter>powerwriter_at_core\3rd\aes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\powerwriter_at_core\3rd\crc\crc.h">
+      <Filter>powerwriter_at_core\3rd\crc</Filter>
+    </ClInclude>
+    <ClInclude Include="SerialPortApp.h">
+      <Filter>powerwriter_at_app</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

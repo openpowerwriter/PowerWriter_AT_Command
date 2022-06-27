@@ -1,0 +1,7 @@
+{
+    "C_Cpp.errorSquiggles": "Disabled",
+    "files.associations": {
+        "cstdint": "c",
+        "powerwriter_at_type.h": "c"
+    }
+}
