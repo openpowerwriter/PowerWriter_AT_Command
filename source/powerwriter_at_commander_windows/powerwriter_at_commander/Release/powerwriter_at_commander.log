@@ -1,0 +1,6 @@
+﻿  aes.c
+  crc32.c
+  powerwriter_at_api.c
+e:\mainprojects\2022\powerwriter_at_command\source\powerwriter_at_core\powerwriter_at_api.c(51): error C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  powerwriter_at_cert.c
+  powerwriter_at_samples.c

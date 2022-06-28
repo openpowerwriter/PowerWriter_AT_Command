@@ -155,7 +155,9 @@
     <ClCompile Include="..\..\powerwriter_at_core\3rd\crc\crc32.c" />
     <ClCompile Include="..\..\powerwriter_at_core\powerwriter_at_api.c" />
     <ClCompile Include="..\..\powerwriter_at_core\powerwriter_at_cert.c" />
+    <ClCompile Include="..\..\powerwriter_at_core\powerwriter_at_porting.c" />
     <ClCompile Include="..\..\powerwriter_at_core\powerwriter_at_samples.c" />
+    <ClCompile Include="..\..\powerwriter_at_core\powerwriter_at_utils.c" />
     <ClCompile Include="CSerialPort\SerialPort.cpp" />
     <ClCompile Include="CSerialPort\SerialPortBase.cpp" />
     <ClCompile Include="CSerialPort\SerialPortInfo.cpp" />
@@ -172,7 +174,9 @@
     <ClInclude Include="..\..\powerwriter_at_core\powerwriter_at_config.h" />
     <ClInclude Include="..\..\powerwriter_at_core\powerwriter_at_error.h" />
     <ClInclude Include="..\..\powerwriter_at_core\powerwriter_at_log.h" />
+    <ClInclude Include="..\..\powerwriter_at_core\powerwriter_at_porting.h" />
     <ClInclude Include="..\..\powerwriter_at_core\powerwriter_at_type.h" />
+    <ClInclude Include="..\..\powerwriter_at_core\powerwriter_at_utils.h" />
     <ClInclude Include="CSerialPort\osplatformutil.h" />
     <ClInclude Include="CSerialPort\SerialPort.h" />
     <ClInclude Include="CSerialPort\SerialPortBase.h" />

@@ -51,25 +51,3 @@ bool powerwriter_at_encrypt(void *data, size_t size, bool encrypt)
 	return true;
 #endif
 }
-
-/*
- * @brief   Frame data check for PowerWriter At command
- * @param
- * 			object	:The object data
- * 			size	:The object size
- * @RetVal 	crc32 value
- */
-uint32_t powerwriter_at_crc32(const void * object, size_t size)
-{
-#ifdef POWERWRITER_AT_HWCRC_ENABLE
-/*
-	CRC Setting Reference
-	Polynomial 				: 0x04C11DB7
-	Initial/Final remainder	: 0xffffffff 
-	Input/Output reverse	: yes
-*/
-#error "You must implement the hardware AES128-CBC on the current platform"
-#else
-	return crc32(object,(int )size);
-#endif
-}

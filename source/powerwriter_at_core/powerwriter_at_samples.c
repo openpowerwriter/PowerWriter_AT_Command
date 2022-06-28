@@ -51,6 +51,12 @@ bool powerwriter_at_benchmark(
 			powerwriter_at_log(LOGE, "powerwriter AT Init failed...\r\n");
 			return false;
 		}
+		/* Get PowerWriter Info */
+		S_ATCmdRspWriterInfo info;
+		if(!powerwriter_at_get_writerinfo(channel, &info)){
+			powerwriter_at_log(LOGE, "powerwriter AT get writer information failed...\r\n");
+			return false;
+		}
 
 		/* result */
 		return false;

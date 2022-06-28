@@ -58,6 +58,12 @@
     <ClCompile Include="..\..\powerwriter_at_core\3rd\crc\crc32.c">
       <Filter>powerwriter_at_core\3rd\crc</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\powerwriter_at_core\powerwriter_at_utils.c">
+      <Filter>powerwriter_at_core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\powerwriter_at_core\powerwriter_at_porting.c">
+      <Filter>powerwriter_at_core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CSerialPort\osplatformutil.h">
@@ -113,6 +119,12 @@
     </ClInclude>
     <ClInclude Include="SerialPortApp.h">
       <Filter>powerwriter_at_app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\powerwriter_at_core\powerwriter_at_utils.h">
+      <Filter>powerwriter_at_core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\powerwriter_at_core\powerwriter_at_porting.h">
+      <Filter>powerwriter_at_core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

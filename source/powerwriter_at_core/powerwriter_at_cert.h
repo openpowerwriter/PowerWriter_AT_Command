@@ -29,7 +29,6 @@ extern "C"
 {
 #endif
     bool powerwriter_at_encrypt(void *object, size_t size, bool encrypt); // aes128 cbc
-    uint32_t powerwriter_at_crc32(const void *object, size_t size);       // crc32
 #ifdef __cplusplus
 }
 #endif

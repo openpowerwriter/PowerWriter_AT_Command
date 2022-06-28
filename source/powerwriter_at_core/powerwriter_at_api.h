@@ -23,6 +23,9 @@
 #define __powerwriter_at_api_h
 
 #include "powerwriter_at_type.h"
+#include "powerwriter_at_utils.h"
+#include "powerwriter_at_cert.h"
+#include "powerwriter_at_porting.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -37,19 +40,26 @@ extern "C"
       bool encrypt,
       ATCmdStreamOut pfDataOut,
       ATCmdEventOut pfEvent);
+
   // Initial PowerWriter AT commander
   extern bool powerwriter_at_init(S_ATChannel *ch,
       bool encrypt,
       ATCmdStreamOut  pfDataOut,
       ATCmdEventOut  pfEvent);
+
   // Fill data to PowerWriter AT commander
-  extern void powerwriter_at_datain(S_ATChannel *ch,
+  extern bool powerwriter_at_datain(S_ATChannel *ch,
       void *data,
       size_t size);
+
 	// Get recevied frame object
 	extern const S_ATCmdFrame * powerwriter_at_received_frame(S_ATChannel *ch);
+
 	// Get last error code
 	extern E_ATCmdError powerwriter_at_last_error(S_ATChannel *ch);
+
+	// Get PowerWriter Information
+	extern bool powerwriter_at_get_writerinfo(S_ATChannel *ch, S_ATCmdRspWriterInfo * info);
 
 #ifdef __cplusplus
 }

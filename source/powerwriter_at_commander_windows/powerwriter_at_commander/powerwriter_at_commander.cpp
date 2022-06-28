@@ -4,9 +4,9 @@
 SerialPortApp m_App;
 
 /* Send AT Command */
-bool powerwriter_data_out(void * data, size_t size, int timeout)
+bool powerwriter_data_out(S_ATCmdFrame * pf, int timeout)
 {
-	return m_App.OnSend(data, size);
+	return m_App.OnSend(pf, pf->m_frameLength);
 }
 
 /* The AT event was received */
