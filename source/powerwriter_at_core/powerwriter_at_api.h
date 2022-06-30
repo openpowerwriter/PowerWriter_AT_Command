@@ -36,6 +36,7 @@ extern "C"
 
   /* export api for powerwriter AT commander */
   // Run PowerWriter AT command self benchmark
+	extern void powerwriter_at_introduction(void);
   extern bool powerwriter_at_benchmark(S_ATChannel *ch,
       bool encrypt,
       ATCmdStreamOut pfDataOut,

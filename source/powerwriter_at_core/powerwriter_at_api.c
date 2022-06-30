@@ -194,7 +194,7 @@ const S_ATCmdFrame * powerwriter_at_received_frame(
 	S_ATChannel *ch
 ) {
 	AT_CHECK_PARAM(ch, NULL)
-	return &ch->m_cmdOutput;
+	return &ch->m_cmdInput;
 }
 
 

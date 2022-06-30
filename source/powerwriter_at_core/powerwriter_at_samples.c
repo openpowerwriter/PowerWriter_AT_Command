@@ -36,6 +36,17 @@ void powerwriter_at_introduction()
 		powerwriter_at_log(LOGI, "\r\n");
 }
 
+//Print PowerWriter information
+void powerwriter_info_print(S_ATCmdRspWriterInfo * info) {
+	if (info) {
+		powerwriter_at_log(LOGD, "PowerWriter type: %s\r\n", info->m_oem);
+		powerwriter_at_log(LOGD, "PowerWriter SN: %.32s\r\n", info->m_sn); // PW_SN_LENGTH
+		powerwriter_at_log(LOGD, "PowerWriter hardware version: %s\r\n", info->m_hardwareVersion);
+		powerwriter_at_log(LOGD, "PowerWriter bootloader version: %s\r\n", info->m_bootloaderVersion);
+		powerwriter_at_log(LOGD, "PowerWriter interface version: %s\r\n", info->m_interfaceVersion);
+	}
+}
+
 //PowerWriter At interface benchmarking
 bool powerwriter_at_benchmark(
 	S_ATChannel  * channel,
@@ -44,8 +55,6 @@ bool powerwriter_at_benchmark(
 	ATCmdEventOut	 pfEvent
 )
 {
-    /* Introduction */
-    powerwriter_at_introduction();
     /* Initial */
 		if (!powerwriter_at_init(channel, encrypt, pfDataOut, pfEvent)) {
 			powerwriter_at_log(LOGE, "powerwriter AT Init failed...\r\n");
@@ -57,7 +66,8 @@ bool powerwriter_at_benchmark(
 			powerwriter_at_log(LOGE, "powerwriter AT get writer information failed...\r\n");
 			return false;
 		}
-
-		/* result */
-		return false;
+		/* Print writer information */
+		powerwriter_info_print(&info);
+		/* Result */
+		return true;
 }

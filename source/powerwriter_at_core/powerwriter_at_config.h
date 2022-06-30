@@ -28,7 +28,7 @@
 // The global control
 #define POWERWRITER_AT_LOGGER_ENABLE /* Enable Logger       */
 //#define POWERWRITER_AT_HWCRC_ENABLE /* Use hardware CRC32  */
-#define POWERWRITER_AT_ENCRYPT_ENABLE /* Enable Data Encrypt */
+//#define POWERWRITER_AT_ENCRYPT_ENABLE /* Enable Data Encrypt */
 
 // Const defined
 #define POWERWRITER_AT_PACKAGE_ALIGN 16 /* package align size */

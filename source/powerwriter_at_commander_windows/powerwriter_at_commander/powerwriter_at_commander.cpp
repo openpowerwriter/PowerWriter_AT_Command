@@ -36,5 +36,9 @@ void powerwriter_event_out(void * obj, S_ATCmdEvent event)
 }
 
 int main() {
-	return m_App.RunATBenchmark(true, powerwriter_data_out, powerwriter_event_out);
+
+	/* Introduction */
+	powerwriter_at_introduction();
+
+	return m_App.RunATBenchmark(false, powerwriter_data_out, NULL);
 }
