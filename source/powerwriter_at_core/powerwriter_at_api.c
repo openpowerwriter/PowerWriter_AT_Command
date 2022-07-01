@@ -72,6 +72,25 @@ static void _cmdSetLastError(S_ATChannel *ch, E_ATCmdError error) {
 	ch->m_config.m_lastError = error;
 }
 
+/* set Writer last error from response */
+static bool _cmdRspLastErrorUpdate(S_ATChannel * ch)
+{
+	if (ch) {
+		switch (ch->m_cmdInput.m_payload.m_cmdType)
+		{
+		case ATCmdStatusError:
+			_cmdSetLastError(ch, ch->m_cmdInput.m_payload.m_cmdProperty.m_ATCmdStatusError.property.m_errorCode);
+			return false;
+		case ATCmdStatusOK:
+			_cmdSetLastError(ch, ATErrorNone);
+			break;
+		default:
+			break;
+		}
+	}
+	return true;
+}
+
 /* Reset Last Event */
 static void _cmdResetLastEvent(S_ATChannel *ch) {
 	ch->m_config.m_lastEvent = ATEventNone;
@@ -204,7 +223,10 @@ static	size_t	_cmdGetPropertySize(
 	E_ATCmdType cmd) {
 	switch (cmd)
 	{
-	case ATCmdGetWriterInfo:	return sizeof(S_ATCmdGetWriterInfo);							/* Get information */
+	case ATCmdGetWriterInfo:	return sizeof(S_ATCmdGetWriterInfo);// Get information 
+	case ATCmdGetWriterCfg:		return sizeof(S_ATCmdGetWriterCfg);	// Get configuration
+	case ATCmdSetBaudRate:		return sizeof(S_ATCmdSetBaudRate);	// Set baud rate
+	case ATCmdConnectTarget:	return sizeof(S_ATCmdConnectTarget);// Init target connect
 	default:
 		return 0;
 	}
@@ -279,7 +301,7 @@ static bool _cmdWaitEvent(
 	uint32_t ts = GetSystemTick();
 	while (GetSystemTick() - ts < timeout) {
 		if (_cmdGetLastEvent(ch) == event) {
-			return true;
+			return _cmdRspLastErrorUpdate(ch);
 		}
 	}
 	/* time out */
@@ -323,10 +345,7 @@ bool powerwriter_at_get_writerinfo(
 	S_ATCmdRspWriterInfo * info) {
 	AT_CHECK_PARAM(ch, false)
 	AT_CHECK_PARAM(info, false)
-
-	//Set property
-	S_ATCmdGetWriterInfo * ppty = &ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdGetWriterInfo;
-	ppty->property.m_placeholder = 0;
+	
 	if (_cmdSendCommand(ch, ATCmdGetWriterInfo, PW_AT_TIMEOUT_BASE)) {
 		if(ch->m_cmdInput.m_payload.m_cmdType == ATCmdRspWriterInfo){
 			*info = ch->m_cmdInput.m_payload.m_cmdProperty.m_ATCmdRspWriterInfo;
@@ -334,4 +353,91 @@ bool powerwriter_at_get_writerinfo(
 		}
 	}
 	return false;
+}
+
+/*
+ * @brief Get PowerWriter configuration
+ * @pram 	ch: AT channel object
+ *				cfg: Out PowerWriter configuration
+ * @return  Returns true on success, false otherwise
+ */
+bool powerwriter_at_get_writerconfig(
+	S_ATChannel *ch,
+	S_ATCmdRspWriterCfg * cfg) {
+	AT_CHECK_PARAM(ch, false)
+	AT_CHECK_PARAM(cfg, false)
+
+	if (_cmdSendCommand(ch, ATCmdGetWriterCfg, PW_AT_TIMEOUT_BASE)) {
+		if (ch->m_cmdInput.m_payload.m_cmdType == ATCmdRspWriterCfg) {
+			*cfg = ch->m_cmdInput.m_payload.m_cmdProperty.m_ATCmdRspWriterCfg;
+			return true;
+		}
+	}
+	return false;
+}
+
+
+/*
+ * @brief Set PowerWriter configuration
+ * @pram 	ch: AT channel object
+ *				cfg: In PowerWriter configuration
+ * @return  Returns true on success, false otherwise
+ */
+bool powerwriter_at_set_writerconfig(
+	S_ATChannel *ch,
+	const S_ATCmdRspWriterCfg * cfg) {
+	AT_CHECK_PARAM(ch, false)
+	AT_CHECK_PARAM(cfg, false)
+	//Set property
+	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdSetWriterCfg = *cfg;
+	if (_cmdSendCommand(ch, ATCmdSetWriterCfg, PW_AT_TIMEOUT_BASE)) {
+		return ch->m_cmdInput.m_payload.m_cmdType == ATCmdStatusOK;
+	}
+	return false;
+}
+
+/*
+ * @brief Set PowerWriter AT baud rate
+ * @pram 	ch: AT channel object
+ *				cfg: In PowerWriter configuration
+ * @return  Returns true on success, false otherwise
+ */
+bool powerwriter_at_set_baudrate(
+	S_ATChannel *ch,
+	int baudrate) {
+	AT_CHECK_PARAM(ch, false)
+	//Set property
+	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdSetBaudRate.property.m_baudRate = baudrate;
+	if (_cmdSendCommand(ch, ATCmdSetBaudRate, PW_AT_TIMEOUT_BASE)) {
+		return ch->m_cmdInput.m_payload.m_cmdType == ATCmdStatusOK;
+	}
+	return false;
+}
+
+/*
+ * @brief Send PowerWriter AT command & return E_ATCmdStatusOk
+ * @pram 	ch: AT channel object
+ *				cmd: command type
+ *				timeout:	time out
+ * @return  Returns true on success, false otherwise
+ */
+bool _powerwriter_at_send_command(S_ATChannel *ch,E_ATCmdType cmd,int timeout){
+	if (_cmdSendCommand(ch, cmd, timeout)) {
+		return ch->m_cmdInput.m_payload.m_cmdType == ATCmdStatusOK;
+	}
+	return false;
+}
+
+/*
+ * @brief Init target connect
+ * @pram 	ch: AT channel object
+ *				cmd: command type
+ *				timeout:	time out
+ * @return  Returns true on success, false otherwise
+ */
+
+bool powerwriter_at_target_connect(
+	S_ATChannel *ch) {
+	AT_CHECK_PARAM(ch, false)
+	return _powerwriter_at_send_command(ch, ATCmdConnectTarget, PW_AT_TIMEOUT_BASE * 10);
 }

@@ -35,32 +35,27 @@ extern "C"
 #include "powerwriter_at_log.h"
 
   /* export api for powerwriter AT commander */
-  // Run PowerWriter AT command self benchmark
-	extern void powerwriter_at_introduction(void);
-  extern bool powerwriter_at_benchmark(S_ATChannel *ch,
-      bool encrypt,
-      ATCmdStreamOut pfDataOut,
-      ATCmdEventOut pfEvent);
-
+  extern void powerwriter_at_introduction(void);
+	// Run PowerWriter AT command self benchmark
+  extern bool powerwriter_at_benchmark(S_ATChannel *,bool, ATCmdStreamOut ,  ATCmdEventOut );
   // Initial PowerWriter AT commander
-  extern bool powerwriter_at_init(S_ATChannel *ch,
-      bool encrypt,
-      ATCmdStreamOut  pfDataOut,
-      ATCmdEventOut  pfEvent);
-
+  extern bool powerwriter_at_init(S_ATChannel *,bool ,ATCmdStreamOut  , ATCmdEventOut  );
   // Fill data to PowerWriter AT commander
-  extern bool powerwriter_at_datain(S_ATChannel *ch,
-      void *data,
-      size_t size);
-
+  extern bool powerwriter_at_datain(S_ATChannel *ch,void *data,size_t size);
 	// Get recevied frame object
 	extern const S_ATCmdFrame * powerwriter_at_received_frame(S_ATChannel *ch);
-
 	// Get last error code
 	extern E_ATCmdError powerwriter_at_last_error(S_ATChannel *ch);
-
 	// Get PowerWriter Information
 	extern bool powerwriter_at_get_writerinfo(S_ATChannel *ch, S_ATCmdRspWriterInfo * info);
+	// Get PowerWriter configuration
+	extern bool	powerwriter_at_get_writerconfig(S_ATChannel *ch, S_ATCmdRspWriterCfg * cfg);
+	// Set PowerWriter configuration
+	extern bool powerwriter_at_set_writerconfig(S_ATChannel *ch, const S_ATCmdRspWriterCfg * cfg);
+	// Set PowerWriter AT baudrate
+	extern bool powerwriter_at_set_baudrate(S_ATChannel *ch, int baudrate);
+	// Init target connnect
+	extern bool powerwriter_at_target_connect(S_ATChannel *ch);
 
 #ifdef __cplusplus
 }

@@ -172,7 +172,7 @@ extern "C"
 		uint32_t m_limitOfNumber;		 // Current remaining quantity (notice: You can only view, but cannot change !!!)
 		uint8_t m_targetAutoEnable;		 // 0: disable 1:enable
 		uint16_t m_targetAutoInDebounce; // Target connected debounce time
-		uint16_t m_chipAutoChkOut;		 // Target disconnected debounce time
+		uint16_t m_targetAutoOutDebounce;		 // Target disconnected debounce time
 	} S_OfflineWriterCfg;
 	// Output Ctrl configure
 	typedef struct S_OutputCtrlWriterCfg

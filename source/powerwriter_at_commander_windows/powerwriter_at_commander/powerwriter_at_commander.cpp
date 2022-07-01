@@ -40,5 +40,5 @@ int main() {
 	/* Introduction */
 	powerwriter_at_introduction();
 
-	return m_App.RunATBenchmark(false, powerwriter_data_out, NULL);
+	return m_App.RunATBenchmark(false, powerwriter_data_out, powerwriter_event_out);
 }

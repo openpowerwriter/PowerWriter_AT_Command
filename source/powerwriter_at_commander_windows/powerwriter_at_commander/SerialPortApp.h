@@ -41,7 +41,7 @@ public:
 			}
 			powerwriter_at_log(LOGI, ">>>benchmark...\r\n");
 			if (!powerwriter_at_benchmark(&this->m_ATCmdApp, encrypt, pfDataOut, pfEvent)) {
-				powerwriter_at_log(LOGE, "%s not is powerwriter port...\r\n", s.portName.c_str());
+				powerwriter_at_log(LOGE, "%s benchmark failed...\r\n", s.portName.c_str());
 				continue;
 			}
 			powerwriter_at_log(LOGD, ">>>All passed...\r\n");
