@@ -51,6 +51,7 @@ public:
 
 	/* AT send data */
 	bool OnSend(void * data, size_t size) {
+		//object_print(data, size, "Send command");
 		if (m_SerialPort.isOpened()) {
 			return m_SerialPort.writeData((char *)data, size) == size;
 		}
@@ -110,6 +111,7 @@ private:
 			vector<char> m_curRead;
 			int iRet = m_SerialPort.readAllData(m_curRead);
 			if (iRet > 0) {
+				//object_print(m_curRead.data(), iRet, "Recived data");
 				powerwriter_at_datain(&this->m_ATCmdApp, m_curRead.data(), iRet);
 			}
 		}

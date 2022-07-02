@@ -149,16 +149,37 @@ bool powerwriter_at_benchmark(
 
 	//Target online bechmark
 	powerwriter_at_log(LOGD, ">>>Target online bechmark ...\r\n");
-	/* init target connnect */
+	/* Init target connnect */
 	if (!powerwriter_at_target_connect(channel)) {
 		powerwriter_at_log(LOGE, "[%08X]:powerwriter initial connect target failed ...\r\n",
 			powerwriter_at_last_error(channel));
 		return false;
 	}
 	powerwriter_at_log(LOGD, "powerwriter initial connect target successfully ...\r\n");
+	/* Get target status */
+	uint32_t ts = GetSystemTick();
+	uint32_t te = ts;
+	powerwriter_at_log(LOGD, "Target connecting >");
+	do {
+		te = GetSystemTick();
+		if (powerwriter_at_target_status(channel)) {
+			powerwriter_at_log(LOGD, "\r\npowerwriter target online...\r\n");
+			break;
+		}
+		powerwriter_at_log(LOGN, ">>");
+	} while (te - ts < 10000);
+	powerwriter_at_log(LOGN, "\r\n");
+	/* Get target id */
+	S_ATCmdRspTargetChipID m_target_id;
+	if (!powerwriter_at_target_id(channel,&m_target_id)) {
+		powerwriter_at_log(LOGE, "[%08X]:powerwriter get target id failed ...\r\n",
+			powerwriter_at_last_error(channel));
+		return false;
+	}
+	object_print(m_target_id.m_CIDData, m_target_id.m_CIDSize, "Target chip id");
+	powerwriter_at_log(LOGD, "powerwriter get target id successfully ...\r\n");
 
-	//
-
+	/* Read Target memory */
 
 	/* Result */
 	return true;

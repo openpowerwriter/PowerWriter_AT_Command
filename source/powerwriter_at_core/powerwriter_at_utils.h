@@ -29,7 +29,7 @@ extern "C"
 {
 #endif
 	size_t	utils_round_up(size_t number, size_t base);		//Round up
-
+	void		object_print(void * obj, size_t size, const char *objname);//object print
 #ifdef __cplusplus
 }
 #endif

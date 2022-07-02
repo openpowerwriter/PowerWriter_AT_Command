@@ -56,6 +56,10 @@ extern "C"
 	extern bool powerwriter_at_set_baudrate(S_ATChannel *ch, int baudrate);
 	// Init target connnect
 	extern bool powerwriter_at_target_connect(S_ATChannel *ch);
+	// Get target status
+	extern bool powerwriter_at_target_status(S_ATChannel *ch);
+	// Get target id
+	extern bool powerwriter_at_target_id(S_ATChannel *ch, S_ATCmdRspTargetChipID * rsp);
 
 #ifdef __cplusplus
 }

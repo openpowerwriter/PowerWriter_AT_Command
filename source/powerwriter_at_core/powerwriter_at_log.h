@@ -30,6 +30,7 @@
 // Log type
 typedef enum E_POWERWRITER_AT_LOG_TYPE
 {
+	LOGN,
 	LOGI,
 	LOGD,
 	LOGW,
@@ -39,14 +40,15 @@ typedef enum E_POWERWRITER_AT_LOG_TYPE
 
 // log type
 static const char *S_POWERWRITER_AT_LOG_PREFIX[__LOG_TYPE_MAX] = {
-	"Info ",
-	"Debug",
-	"Warn ",
-	"Error"};
+	"",
+	"[Info ]:",
+	"[Debug]:",
+	"[Warn ]:",
+	"[Error]:"};
 
 /* exports api */
 // print log
-#define powerwriter_at_log(type, format, ...) printf("[%s]:" format,S_POWERWRITER_AT_LOG_PREFIX[type],##__VA_ARGS__)
+#define powerwriter_at_log(type, format, ...) printf("%s" format,S_POWERWRITER_AT_LOG_PREFIX[type],##__VA_ARGS__)
 #else
 #define powerwriter_at_log(type, format, ...)
 #endif
