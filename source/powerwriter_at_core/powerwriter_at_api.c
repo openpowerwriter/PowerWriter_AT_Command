@@ -238,7 +238,9 @@ static	size_t	_cmdGetPropertySize(
 		return sizeof(pf->m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_address) + 
 					sizeof(pf->m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_size) + 
 					pf->m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_size;
-	case ATCmdReadTargetOptionByte:	return sizeof(S_ATCmdReadTargetOptionByte);					//Read target option byte
+	case ATCmdReadTargetOptionByte:			return sizeof(S_ATCmdReadTargetOptionByte);							//Read target option byte
+	case ATCmdWriteTargetVendorOptionByte:	return sizeof(S_ATCmdWriteTargetVendorOptionByte);	//Write target vendor default option byte
+	case ATCmdWriteTargetUserOptionByte:return sizeof(S_ATCmdWriteTargetUserOptionByte);//Write target user's option byte
 	default:
 		return 0;
 	}
@@ -599,4 +601,30 @@ bool powerwriter_at_target_read_ob(
 	}
 	*ppob = NULL;
 	return false;
+}
+
+/*
+ * @brief write target vendor default option byte
+ * @pram 	ch: AT channel object
+ *				timeout: time out 
+ * @return  Returns true on success, false otherwise
+ */
+bool powerwriter_at_target_write_vendor_ob(
+	S_ATChannel *ch,
+	int timout_ms) {
+	AT_CHECK_PARAM(ch, false)
+	return _powerwriter_at_send_command(ch, ATCmdWriteTargetVendorOptionByte, timout_ms);
+}
+
+/*
+ * @brief write target usr's option byte
+ * @pram 	ch: AT channel object
+ *				timeout: time out
+ * @return  Returns true on success, false otherwise
+ */
+bool powerwriter_at_target_write_user_ob(
+	S_ATChannel *ch,
+	int timout_ms) {
+	AT_CHECK_PARAM(ch, false)
+	return _powerwriter_at_send_command(ch, ATCmdWriteTargetUserOptionByte, timout_ms);
 }

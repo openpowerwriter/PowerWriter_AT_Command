@@ -71,6 +71,11 @@ extern "C"
 	extern bool powerwriter_at_target_write(S_ATChannel *ch, uint32_t	addr, void * buffer, size_t buffersize);
 	// Read target option byte
 	extern bool powerwriter_at_target_read_ob(S_ATChannel *ch, S_ATCmdRspTargetOptionByte ** ppob);
+	// Write target vendor default option byte
+	extern bool powerwriter_at_target_write_vendor_ob(S_ATChannel *ch, int timout_ms);
+	// Write target user's option byte
+	extern bool powerwriter_at_target_write_user_ob(S_ATChannel *ch, int timout_ms);
+
 
 #ifdef __cplusplus
 }

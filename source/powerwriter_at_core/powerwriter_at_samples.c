@@ -214,6 +214,7 @@ bool powerwriter_at_benchmark(
 	}
 	powerwriter_at_log(LOGD, "powerwriter read target memory test passed ...\r\n");
 
+
 	/* erase target chip */
 	powerwriter_at_log(LOGD, "powerwriter erase target chip ...\r\n");
 	if (!powerwriter_at_target_erase(channel, 10000)) { 
@@ -275,6 +276,26 @@ bool powerwriter_at_benchmark(
 	}
 	object_print(ppob->m_OBData, ppob->m_OBsize, "Options byte raw");
 	powerwriter_at_log(LOGD, "powerwriter read target option byte passed ...\r\n");
+
+	/* write vendor's default option byte */
+	powerwriter_at_log(LOGD, "powerwriter write target vendor's default option byte ...\r\n");
+	if (!powerwriter_at_target_write_vendor_ob(channel, PW_AT_TIMEOUT_BASE)) {
+		powerwriter_at_log(LOGE, "[%08X]:powerwriter write target vendor's default option byte failed ...\r\n",
+			powerwriter_at_last_error(channel));
+		return false;
+	}
+	powerwriter_at_log(LOGD, "powerwriter write target vendor's default option byte passed ...\r\n");
+
+
+	/* write user option byte */
+	powerwriter_at_log(LOGD, "powerwriter write target user's option byte ...\r\n");
+	if (!powerwriter_at_target_write_user_ob(channel, PW_AT_TIMEOUT_BASE)) {
+		powerwriter_at_log(LOGE, "[%08X]:powerwriter write target user's option byte failed ...\r\n",
+			powerwriter_at_last_error(channel));
+		return false;
+	}
+	powerwriter_at_log(LOGD, "powerwriter write target user's option byte passed ...\r\n");
+
 
 	/* Result */
 	return true;
