@@ -246,18 +246,35 @@ bool powerwriter_at_benchmark(
 	} while (i < sizeof(m_raw_data));
 
 	powerwriter_at_log(LOGD, "powerwriter write memory start...\r\n");
+
+	if (!powerwriter_at_target_write_prepare(channel, m_chip_write.m_e_addr - m_chip_write.m_s_addr)) {
+		powerwriter_at_log(LOGE, "[%08X]:powerwriter prepare write memory failed ...\r\n",
+			powerwriter_at_last_error(channel));
+		return false;
+	}
 	do{
 		powerwriter_at_log(LOGN, ">");
-		if (!powerwriter_at_target_write(channel, m_chip_write.m_s_addr, m_raw_data, 127)) {
+		if (!powerwriter_at_target_write(channel, m_chip_write.m_s_addr, m_raw_data, sizeof(m_raw_data))) {
 			powerwriter_at_log(LOGN, "\r\n");
 			powerwriter_at_log(LOGE, "[%08X]:powerwriter write memory addr 0x%08x failed ...\r\n",
 				powerwriter_at_last_error(channel), m_chip_write.m_s_addr);
 			return false;
 		}
-		m_chip_write.m_s_addr += 127;
+		m_chip_write.m_s_addr += sizeof(m_raw_data);
 	} while (m_chip_write.m_s_addr < m_chip_write.m_e_addr);
 	powerwriter_at_log(LOGN, "\r\n");
 	powerwriter_at_log(LOGD, "powerwriter write memory passed...\r\n");
+	
+	/* Read target chip option byte */
+	S_ATCmdRspTargetOptionByte * ppob = NULL;
+	powerwriter_at_log(LOGD, "powerwriter read target option byte ...\r\n");
+	if (!powerwriter_at_target_read_ob(channel, &ppob)) {
+		powerwriter_at_log(LOGE, "[%08X]:powerwriter read target option byte failed ...\r\n",
+			powerwriter_at_last_error(channel));
+		return false;
+	}
+	object_print(ppob->m_OBData, ppob->m_OBsize, "Options byte raw");
+	powerwriter_at_log(LOGD, "powerwriter read target option byte passed ...\r\n");
 
 	/* Result */
 	return true;

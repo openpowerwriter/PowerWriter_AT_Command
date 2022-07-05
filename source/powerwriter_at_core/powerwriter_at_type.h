@@ -60,6 +60,10 @@ extern "C"
 		ATCmdEraseTarget,		 // Erase target chip (full)
 		ATCmdEraseTargetSectors, // Erase target sectors
 
+		ATCmdWriteTargetMemoryPrepare,	// Prepare to Write target memory, ( Note: 
+																		// Reports the total length of data that needs to be written)
+																		// Double buffering to improve write speed
+
 		ATCmdWriteTargetMemory, // Write target memory
 
 		ATCmdReadTargetOptionByte,		  // Read target option byte
@@ -105,6 +109,7 @@ extern "C"
 			uint32_t m_placeholder; // An placeholder for empty structure
 			uint32_t m_baudRate;	// Set UART AT new baudRate;
 			uint32_t m_errorCode;	// Status error code
+			uint32_t m_totalsize;	// total size
 		} property;
 	} S_ATCmdGetWriterInfo,
 		S_ATCmdGetWriterCfg,
@@ -115,6 +120,7 @@ extern "C"
 		S_ATCmdSetBaudRate,
 		S_ATCmdGetTargetChipID,
 		S_ATCmdEraseTarget,
+		S_ATCmdWriteTargetMemoryPrepare,
 		S_ATCmdReadTargetOptionByte,
 		S_ATCmdWriteTargetVendorOptionByte,
 		S_ATCmdGetProjectInfo,
@@ -297,6 +303,7 @@ extern "C"
 		S_ATCmdRspTargetMemory m_ATCmdRspTargetMemory;
 		S_ATCmdEraseTarget m_ATCmdEraseTarget;
 		S_ATCmdEraseTargetSectors m_ATCmdEraseTargetSectors;
+		S_ATCmdWriteTargetMemoryPrepare m_ATCmdWriteTargetMemoryPrepare;
 		S_ATCmdWriteTargetMemory m_ATCmdWriteTargetMemory;
 		S_ATCmdReadTargetOptionByte m_ATCmdReadTargetOptionByte;
 		S_ATCmdRspTargetOptionByte m_ATCmdRspTargetOptionByte;

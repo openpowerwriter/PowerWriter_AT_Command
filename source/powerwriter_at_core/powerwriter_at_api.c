@@ -223,21 +223,22 @@ static	size_t	_cmdGetPropertySize(
 	E_ATCmdType cmd) {
 	switch (cmd)
 	{
-	case ATCmdGetWriterInfo:				return sizeof(S_ATCmdGetWriterInfo);				// Get information 
-	case ATCmdGetWriterCfg:					return sizeof(S_ATCmdGetWriterCfg);					// Get configuration
-	case ATCmdSetWriterCfg:					return sizeof(S_ATCmdSetWriterCfg);					// Set Writer configure
-	case ATCmdSetBaudRate:					return sizeof(S_ATCmdSetBaudRate);					// Set baud rate
-	case ATCmdConnectTarget:				return sizeof(S_ATCmdConnectTarget);				// Init target connect
-	case ATCmdGetTargetStatus:			return sizeof(S_ATCmdGetTargetStatus);			// Get target status
-	case ATCmdGetTargetChipID:			return sizeof(S_ATCmdGetTargetChipID);			// Get target id
-	case ATCmdReadTargetMemory:			return sizeof(S_ATCmdReadTargetMemory);			// Read target memory
-	case ATCmdEraseTarget:					return sizeof(S_ATCmdEraseTarget);					// Erase target chip
-	case ATCmdEraseTargetSectors:		return sizeof(S_ATCmdEraseTargetSectors);		// Erase target chip sector
-	case ATCmdWriteTargetMemory:																								// Write target memory 
+	case ATCmdGetWriterInfo:						return sizeof(S_ATCmdGetWriterInfo);						// Get information 
+	case ATCmdGetWriterCfg:							return sizeof(S_ATCmdGetWriterCfg);							// Get configuration
+	case ATCmdSetWriterCfg:							return sizeof(S_ATCmdSetWriterCfg);							// Set Writer configure
+	case ATCmdSetBaudRate:							return sizeof(S_ATCmdSetBaudRate);							// Set baud rate
+	case ATCmdConnectTarget:						return sizeof(S_ATCmdConnectTarget);						// Init target connect
+	case ATCmdGetTargetStatus:					return sizeof(S_ATCmdGetTargetStatus);					// Get target status
+	case ATCmdGetTargetChipID:					return sizeof(S_ATCmdGetTargetChipID);					// Get target id
+	case ATCmdReadTargetMemory:					return sizeof(S_ATCmdReadTargetMemory);					// Read target memory
+	case ATCmdEraseTarget:							return sizeof(S_ATCmdEraseTarget);							// Erase target chip
+	case ATCmdEraseTargetSectors:				return sizeof(S_ATCmdEraseTargetSectors);				// Erase target chip sector
+	case ATCmdWriteTargetMemoryPrepare:	return sizeof(S_ATCmdWriteTargetMemoryPrepare);	//Prepare write target memory 
+	case ATCmdWriteTargetMemory:																												// Write target memory 
 		return sizeof(pf->m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_address) + 
 					sizeof(pf->m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_size) + 
 					pf->m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_size;
-
+	case ATCmdReadTargetOptionByte:	return sizeof(S_ATCmdReadTargetOptionByte);					//Read target option byte
 	default:
 		return 0;
 	}
@@ -556,6 +557,14 @@ bool powerwriter_at_target_erase_sector(
  * @return  Returns true on success, false otherwise
  */
 
+bool powerwriter_at_target_write_prepare(
+	S_ATChannel *ch,
+	uint32_t	total
+) {
+	AT_CHECK_PARAM(ch, false)
+	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdWriteTargetMemoryPrepare.property.m_totalsize = total;
+	return _powerwriter_at_send_command(ch, ATCmdWriteTargetMemoryPrepare, PW_AT_TIMEOUT_BASE);
+}
 bool powerwriter_at_target_write(
 	S_ATChannel *ch,
 	uint32_t	addr,
@@ -568,4 +577,26 @@ bool powerwriter_at_target_write(
 		ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_size);
 
 	return _powerwriter_at_send_command(ch, ATCmdWriteTargetMemory, PW_AT_TIMEOUT_BASE);
+}
+
+/*
+ * @brief Read target option byte
+ * @pram 	ch: AT channel object
+					
+ * @return  Returns true on success, false otherwise
+ */
+
+bool powerwriter_at_target_read_ob(
+	S_ATChannel *ch,
+	S_ATCmdRspTargetOptionByte ** ppob) {
+	AT_CHECK_PARAM(ch, false)
+	AT_CHECK_PARAM(ppob, false)
+	if (_cmdSendCommand(ch, ATCmdReadTargetOptionByte, PW_AT_TIMEOUT_BASE)) {
+		if (ch->m_cmdInput.m_payload.m_cmdType == ATCmdRspTargetOptionByte) {
+			*ppob = &ch->m_cmdInput.m_payload.m_cmdProperty.m_ATCmdRspTargetOptionByte;
+			return true;
+		}
+	}
+	*ppob = NULL;
+	return false;
 }
