@@ -64,6 +64,10 @@ extern "C"
 	extern bool powerwriter_at_target_read(S_ATChannel *ch, uint32_t addr, uint32_t size, S_ATCmdRspTargetMemory ** memory);
 	// Erase target chip
 	extern bool powerwriter_at_target_erase(S_ATChannel *ch, int timout_ms);
+	// Erase target flash memory
+	extern bool powerwriter_at_target_erase_sector(S_ATChannel *ch, uint32_t addr, uint32_t size, int timout_ms);
+	// Write target flash memory
+	extern bool powerwriter_at_target_write(S_ATChannel *ch, uint32_t	addr, void * buffer, size_t buffersize);
 
 #ifdef __cplusplus
 }

@@ -223,15 +223,21 @@ static	size_t	_cmdGetPropertySize(
 	E_ATCmdType cmd) {
 	switch (cmd)
 	{
-	case ATCmdGetWriterInfo:		return sizeof(S_ATCmdGetWriterInfo);		// Get information 
-	case ATCmdGetWriterCfg:			return sizeof(S_ATCmdGetWriterCfg);			// Get configuration
-	case ATCmdSetWriterCfg:			return sizeof(S_ATCmdSetWriterCfg);			// Set Writer configure
-	case ATCmdSetBaudRate:			return sizeof(S_ATCmdSetBaudRate);			// Set baud rate
-	case ATCmdConnectTarget:		return sizeof(S_ATCmdConnectTarget);		// Init target connect
-	case ATCmdGetTargetStatus:	return sizeof(S_ATCmdGetTargetStatus);	// Get target status
-	case ATCmdGetTargetChipID:	return sizeof(S_ATCmdGetTargetChipID);	// Get target id
-	case ATCmdReadTargetMemory:	return sizeof(S_ATCmdReadTargetMemory);	// Read target memory
-	case ATCmdEraseTarget:			return sizeof(S_ATCmdEraseTarget);			// Erase target chiop
+	case ATCmdGetWriterInfo:				return sizeof(S_ATCmdGetWriterInfo);				// Get information 
+	case ATCmdGetWriterCfg:					return sizeof(S_ATCmdGetWriterCfg);					// Get configuration
+	case ATCmdSetWriterCfg:					return sizeof(S_ATCmdSetWriterCfg);					// Set Writer configure
+	case ATCmdSetBaudRate:					return sizeof(S_ATCmdSetBaudRate);					// Set baud rate
+	case ATCmdConnectTarget:				return sizeof(S_ATCmdConnectTarget);				// Init target connect
+	case ATCmdGetTargetStatus:			return sizeof(S_ATCmdGetTargetStatus);			// Get target status
+	case ATCmdGetTargetChipID:			return sizeof(S_ATCmdGetTargetChipID);			// Get target id
+	case ATCmdReadTargetMemory:			return sizeof(S_ATCmdReadTargetMemory);			// Read target memory
+	case ATCmdEraseTarget:					return sizeof(S_ATCmdEraseTarget);					// Erase target chip
+	case ATCmdEraseTargetSectors:		return sizeof(S_ATCmdEraseTargetSectors);		// Erase target chip sector
+	case ATCmdWriteTargetMemory:																								// Write target memory 
+		return sizeof(pf->m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_address) + 
+					sizeof(pf->m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_size) + 
+					pf->m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_size;
+
 	default:
 		return 0;
 	}
@@ -298,6 +304,16 @@ static void _cmdResetRXBuffer(S_ATChannel *ch) {
 
 
 /* Wait event */
+/*
+ *notes: the CPU usage is released by sleep,
+ *But here, for simplicity and cross-platform purposes,
+ *the simplest approach is used
+ *You can use the event bus instead event flag, such as
+ *(1): CreatEvent、ResetEvent、SetEvent、WaitSingleObject at Windows platform , or
+ *(2): boost signals and slots��thread in unix (like)...
+ *(3): pevents 、eventbus in opensource c++ library...
+ *							by:cshsoft、csh@icworkshop.com
+ */
 static bool _cmdWaitEvent(
 	S_ATChannel * ch, 
 	S_ATCmdEvent event, 
@@ -305,6 +321,7 @@ static bool _cmdWaitEvent(
 {
 	uint32_t ts = GetSystemTick();
 	while (GetSystemTick() - ts < timeout) {
+		ATSleep(1);
 		if (_cmdGetLastEvent(ch) == event) {
 			return _cmdRspLastErrorUpdate(ch);
 		}
@@ -510,4 +527,45 @@ bool powerwriter_at_target_erase(
 	int timout_ms) {
 	AT_CHECK_PARAM(ch, false)
 	return _powerwriter_at_send_command(ch, ATCmdEraseTarget, timout_ms);
+}
+
+
+/*
+ * @brief erase target memory sector
+ * @pram 	ch: AT channel object
+ *				addr: erase flash addr
+ *				size:	erase length
+ *				timeout: time out
+ * @return  Returns true on success, false otherwise
+ */
+bool powerwriter_at_target_erase_sector(
+	S_ATChannel *ch,
+	uint32_t addr,
+	uint32_t size,
+	int timout_ms) {
+	AT_CHECK_PARAM(ch, false)
+	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdEraseTargetSectors.m_address = addr;
+	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdEraseTargetSectors.m_size = size;
+	return _powerwriter_at_send_command(ch, ATCmdEraseTargetSectors, timout_ms);
+}
+
+
+/*
+ * @brief Write target memory
+ * @pram 	ch: AT channel object
+ * @return  Returns true on success, false otherwise
+ */
+
+bool powerwriter_at_target_write(
+	S_ATChannel *ch,
+	uint32_t	addr,
+	void * buffer,
+	size_t buffersize) {
+	AT_CHECK_PARAM(ch, false)
+	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_size = MIN(PW_PACKAGE_SIZE, buffersize);
+	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_address = addr;
+	memcpy(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_buffer, buffer,
+		ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_size);
+
+	return _powerwriter_at_send_command(ch, ATCmdWriteTargetMemory, PW_AT_TIMEOUT_BASE);
 }

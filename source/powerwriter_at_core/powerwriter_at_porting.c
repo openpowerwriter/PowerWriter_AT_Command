@@ -29,6 +29,13 @@
 #include <time.h>
 #endif
 
+//Sleep
+#ifdef WIN32
+#include <windows.h>
+#elif defined(__GNUC__)
+#include <unistd.h>
+#endif
+
 /*
  Get System ticks
  */ 
@@ -43,11 +50,20 @@ uint32_t	GetSystemTick()
 }
 
 /*
- Delay ms
+ Sleep
 */
-void DelayMs(uint32_t ms) {
+void ATSleep(uint32_t ms) {
+#ifdef WIN32
+	Sleep(ms);
+#elif defined(__GNUC__)
+	usleep(ms);
+#else
 	uint32_t ts = GetSystemTick();
 	while (GetSystemTick() - ts < ms);
+#endif
+	//add a sleep interface to your platform or operating system ...
+	//...
+
 }
 
 /* log enable ?*/

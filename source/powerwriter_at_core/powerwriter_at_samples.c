@@ -161,7 +161,7 @@ bool powerwriter_at_benchmark(
 	uint32_t te = ts;
 	powerwriter_at_log(LOGD, "Target connecting >");
 	do {
-		DelayMs(50);
+		ATSleep(50);
 		if (powerwriter_at_target_status(channel)) {
 			powerwriter_at_log(LOGN, "powerwriter target connected...");
 			break;
@@ -197,7 +197,7 @@ bool powerwriter_at_benchmark(
 		},
 	};
 	S_ATCmdRspTargetMemory * mem = 0;
-	for (i = 0; i < ARRAYSIZE(m_chip_memory); i++)
+	for (i = 0; i < ARRAY_SIZE(m_chip_memory); i++)
 	{
 		uint32_t addr = m_chip_memory[i].m_s_addr;
 		do {
@@ -214,7 +214,7 @@ bool powerwriter_at_benchmark(
 	}
 	powerwriter_at_log(LOGD, "powerwriter read target memory test passed ...\r\n");
 
-	//erase test
+	/* erase target chip */
 	powerwriter_at_log(LOGD, "powerwriter erase target chip ...\r\n");
 	if (!powerwriter_at_target_erase(channel, 10000)) { 
 		powerwriter_at_log(LOGE, "[%08X]:powerwriter erase target chip failed ...\r\n",
@@ -223,6 +223,41 @@ bool powerwriter_at_benchmark(
 	}
 	powerwriter_at_log(LOGD, "powerwriter erase target chip test passed ...\r\n");
 
+	/* erase target chip sectors (The hit sectors will be erased) */
+	powerwriter_at_log(LOGD, "powerwriter erase memory sector start(the hit sector will be erased)...\r\n");
+	if (!powerwriter_at_target_erase_sector(channel,0x0801ACFF,0x1002, 10000)) {
+		powerwriter_at_log(LOGE, "[%08X]:powerwriter erase memory sector failed ...\r\n",
+			powerwriter_at_last_error(channel));
+		return false;
+	}
+	powerwriter_at_log(LOGD, "powerwriter erase memory sector passed...\r\n");
+
+	/* write target chip */
+	S_ChipMemoryCfg m_chip_write = 
+	{
+		.m_s_addr = 0x08000000,
+		.m_e_addr = 0x08020000,
+		.m_name = "128K Flash"
+	};
+	uint8_t m_raw_data[PW_PACKAGE_SIZE];
+	i = 0;
+	do {
+		m_raw_data[i] = i++;
+	} while (i < sizeof(m_raw_data));
+
+	powerwriter_at_log(LOGD, "powerwriter write memory start...\r\n");
+	do{
+		powerwriter_at_log(LOGN, ">");
+		if (!powerwriter_at_target_write(channel, m_chip_write.m_s_addr, m_raw_data, 127)) {
+			powerwriter_at_log(LOGN, "\r\n");
+			powerwriter_at_log(LOGE, "[%08X]:powerwriter write memory addr 0x%08x failed ...\r\n",
+				powerwriter_at_last_error(channel), m_chip_write.m_s_addr);
+			return false;
+		}
+		m_chip_write.m_s_addr += 127;
+	} while (m_chip_write.m_s_addr < m_chip_write.m_e_addr);
+	powerwriter_at_log(LOGN, "\r\n");
+	powerwriter_at_log(LOGD, "powerwriter write memory passed...\r\n");
 
 	/* Result */
 	return true;

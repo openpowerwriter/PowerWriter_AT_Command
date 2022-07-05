@@ -29,6 +29,7 @@
 #define POWERWRITER_AT_LOGGER_ENABLE /* Enable Logger       */
 //#define POWERWRITER_AT_HWCRC_ENABLE /* Use hardware CRC32  */
 //#define POWERWRITER_AT_ENCRYPT_ENABLE /* Enable Data Encrypt */
+#define POWERWRITER_AT_ASSERT_ENABLE	/*Enable AT ASSERT */
 
 // Const defined
 #define POWERWRITER_AT_PACKAGE_ALIGN 16 /* package align size */
@@ -73,11 +74,16 @@ static uint8_t m_at_encrypt_iv_[] = {0xca, 0x51, 0x1b, 0x68, 0x19, 0xd6, 0x44, 0
 #endif                        // ! __arm__
 
 /* Macro utils */
+#ifdef POWERWRITER_AT_ASSERT_ENABLE
 #define AT_CHECK_PARAM(CH, RET) \
     if (NULL == CH)             \
     {                           \
         return RET;             \
     }
+#else
+#define AT_CHECK_PARAM(CH, RET)
+#endif
+
 #define AT_CHECK_PARAM_VOID(CH) AT_CHECK_PARAM(CH, )
 
 #define ZERO(obj) memset(&obj, 0, sizeof(obj))
@@ -88,7 +94,7 @@ static uint8_t m_at_encrypt_iv_[] = {0xca, 0x51, 0x1b, 0x68, 0x19, 0xd6, 0x44, 0
 #endif
 
 #ifndef ARRAYSIZE
-#define	ARRAYSIZE(T)		(sizeof(T)/sizeof(T[0])) 
+#define	ARRAY_SIZE(T)		(sizeof(T)/sizeof(T[0])) 
 #endif
 
 #endif
