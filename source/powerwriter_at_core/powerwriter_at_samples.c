@@ -161,25 +161,68 @@ bool powerwriter_at_benchmark(
 	uint32_t te = ts;
 	powerwriter_at_log(LOGD, "Target connecting >");
 	do {
-		te = GetSystemTick();
+		DelayMs(50);
 		if (powerwriter_at_target_status(channel)) {
-			powerwriter_at_log(LOGD, "\r\npowerwriter target online...\r\n");
+			powerwriter_at_log(LOGN, "powerwriter target connected...");
 			break;
 		}
 		powerwriter_at_log(LOGN, ">>");
+		te = GetSystemTick();
 	} while (te - ts < 10000);
 	powerwriter_at_log(LOGN, "\r\n");
 	/* Get target id */
 	S_ATCmdRspTargetChipID m_target_id;
 	if (!powerwriter_at_target_id(channel,&m_target_id)) {
 		powerwriter_at_log(LOGE, "[%08X]:powerwriter get target id failed ...\r\n",
-			powerwriter_at_last_error(channel));
+		powerwriter_at_last_error(channel));
 		return false;
 	}
 	object_print(m_target_id.m_CIDData, m_target_id.m_CIDSize, "Target chip id");
 	powerwriter_at_log(LOGD, "powerwriter get target id successfully ...\r\n");
 
 	/* Read Target memory */
+	//example is G32F350xB ,128 KB Flash & 16K sram
+	int i = 0;
+	powerwriter_at_log(LOGD, "powerwriter read target memory starting ...\r\n");
+	S_ChipMemoryCfg m_chip_memory[] = {
+		{
+			.m_s_addr = 0x20000000,
+			.m_e_addr = 0x20004000,
+			.m_name = "16K SRAM"
+		},
+		{
+			.m_s_addr = 0x08000000,
+			.m_e_addr = 0x08020000,
+			.m_name = "128K Flash"
+		},
+	};
+	S_ATCmdRspTargetMemory * mem = 0;
+	for (i = 0; i < ARRAYSIZE(m_chip_memory); i++)
+	{
+		uint32_t addr = m_chip_memory[i].m_s_addr;
+		do {
+			if (!powerwriter_at_target_read(channel, addr, PW_PACKAGE_SIZE, &mem)) {
+				powerwriter_at_log(LOGE, "[%08X]:powerwriter read target memory failed ...\r\n",
+					powerwriter_at_last_error(channel));
+				return false;
+			}
+			powerwriter_at_log(LOGD, "(%s)memmory addr: 0x%08X, memory size: %d\r\n", m_chip_memory[i].m_name,
+				mem->m_address, mem->m_size);
+			object_print(mem->m_buffer, mem->m_size, "data block:");
+			addr += mem->m_size;
+		} while (addr < m_chip_memory[i].m_e_addr);
+	}
+	powerwriter_at_log(LOGD, "powerwriter read target memory test passed ...\r\n");
+
+	//erase test
+	powerwriter_at_log(LOGD, "powerwriter erase target chip ...\r\n");
+	if (!powerwriter_at_target_erase(channel, 10000)) { 
+		powerwriter_at_log(LOGE, "[%08X]:powerwriter erase target chip failed ...\r\n",
+			powerwriter_at_last_error(channel));
+		return false; 
+	}
+	powerwriter_at_log(LOGD, "powerwriter erase target chip test passed ...\r\n");
+
 
 	/* Result */
 	return true;

@@ -42,6 +42,14 @@ uint32_t	GetSystemTick()
 	
 }
 
+/*
+ Delay ms
+*/
+void DelayMs(uint32_t ms) {
+	uint32_t ts = GetSystemTick();
+	while (GetSystemTick() - ts < ms);
+}
+
 /* log enable ?*/
 #ifdef POWERWRITER_AT_LOGGER_ENABLE
 #ifdef __arm__

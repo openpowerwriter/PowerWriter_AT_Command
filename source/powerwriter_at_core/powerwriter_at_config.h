@@ -87,4 +87,8 @@ static uint8_t m_at_encrypt_iv_[] = {0xca, 0x51, 0x1b, 0x68, 0x19, 0xd6, 0x44, 0
 #define MIN(a,b) ((a) < (b)? (a):(b))
 #endif
 
+#ifndef ARRAYSIZE
+#define	ARRAYSIZE(T)		(sizeof(T)/sizeof(T[0])) 
+#endif
+
 #endif

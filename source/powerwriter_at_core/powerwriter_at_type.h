@@ -269,6 +269,13 @@ extern "C"
 		uint8_t m_data[PW_PACKAGE_SIZE];	 // data
 	} S_ATCmdBroadcast;
 
+
+	typedef struct S_ChipMemoryCfg {
+		uint32_t m_s_addr;
+		uint32_t m_e_addr;
+		char * m_name;
+	}S_ChipMemoryCfg;
+
 #pragma pack(pop)
 
 	// PowerWriter AT command property (union)

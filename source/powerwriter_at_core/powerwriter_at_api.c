@@ -231,6 +231,7 @@ static	size_t	_cmdGetPropertySize(
 	case ATCmdGetTargetStatus:	return sizeof(S_ATCmdGetTargetStatus);	// Get target status
 	case ATCmdGetTargetChipID:	return sizeof(S_ATCmdGetTargetChipID);	// Get target id
 	case ATCmdReadTargetMemory:	return sizeof(S_ATCmdReadTargetMemory);	// Read target memory
+	case ATCmdEraseTarget:			return sizeof(S_ATCmdEraseTarget);			// Erase target chiop
 	default:
 		return 0;
 	}
@@ -482,15 +483,31 @@ bool powerwriter_at_target_id(
 bool powerwriter_at_target_read(
 	S_ATChannel *ch,
 	uint32_t addr,
-	uint32_t size) {
+	uint32_t size,
+	S_ATCmdRspTargetMemory ** memory) {
 	AT_CHECK_PARAM(ch, false)
+	AT_CHECK_PARAM(memory, false);
 	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdReadTargetMemory.m_address = addr;
 	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdReadTargetMemory.m_size = MIN(PW_PACKAGE_SIZE, size);
 	if (_cmdSendCommand(ch, ATCmdReadTargetMemory, PW_AT_TIMEOUT_BASE)) {
 		if (ch->m_cmdInput.m_payload.m_cmdType == ATCmdRspTargetMemory) {
-			
+			*memory = &ch->m_cmdInput.m_payload.m_cmdProperty.m_ATCmdRspTargetMemory;
 			return true;
 		}
 	}
+	*memory = NULL;
 	return false;
+}
+
+/*
+ * @brief erase target chip
+ * @pram 	ch: AT channel object
+ *				timeout: time out  
+ * @return  Returns true on success, false otherwise
+ */
+bool powerwriter_at_target_erase(
+	S_ATChannel *ch,
+	int timout_ms) {
+	AT_CHECK_PARAM(ch, false)
+	return _powerwriter_at_send_command(ch, ATCmdEraseTarget, timout_ms);
 }

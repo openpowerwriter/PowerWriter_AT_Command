@@ -60,6 +60,10 @@ extern "C"
 	extern bool powerwriter_at_target_status(S_ATChannel *ch);
 	// Get target id
 	extern bool powerwriter_at_target_id(S_ATChannel *ch, S_ATCmdRspTargetChipID * rsp);
+	// Read target memory
+	extern bool powerwriter_at_target_read(S_ATChannel *ch, uint32_t addr, uint32_t size, S_ATCmdRspTargetMemory ** memory);
+	// Erase target chip
+	extern bool powerwriter_at_target_erase(S_ATChannel *ch, int timout_ms);
 
 #ifdef __cplusplus
 }
