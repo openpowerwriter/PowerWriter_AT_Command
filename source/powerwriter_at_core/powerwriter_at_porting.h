@@ -18,25 +18,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
-#ifndef powerwriter_at_porting_h		
-#define powerwriter_at_porting_h 		
+
+#ifndef powerwriter_at_porting_h
+#define powerwriter_at_porting_h
 
 #include <stddef.h>
 #include "powerwriter_at_config.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-uint32_t	GetSystemTick(void);									/* Get System Tick */
-void			ATSleep(uint32_t);										/* Delay ms */
-uint32_t	GetCrc32(const void * data, size_t size);		/* Get crc16 */
+    uint32_t GetSystemTick(void);                     /* Get System Tick */
+    void ATSleep(uint32_t);                           /* Delay ms */
+    uint32_t GetCrc32(const void *data, size_t size); /* Get crc16 */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-
-

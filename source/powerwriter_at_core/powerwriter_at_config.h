@@ -29,7 +29,7 @@
 #define POWERWRITER_AT_LOGGER_ENABLE /* Enable Logger       */
 //#define POWERWRITER_AT_HWCRC_ENABLE /* Use hardware CRC32  */
 //#define POWERWRITER_AT_ENCRYPT_ENABLE /* Enable Data Encrypt */
-#define POWERWRITER_AT_ASSERT_ENABLE	/*Enable AT ASSERT */
+#define POWERWRITER_AT_ASSERT_ENABLE /*Enable AT ASSERT */
 
 // Const defined
 #define POWERWRITER_AT_PACKAGE_ALIGN 16 /* package align size */
@@ -46,22 +46,22 @@ static uint8_t m_at_encrypt_iv_[] = {0xca, 0x51, 0x1b, 0x68, 0x19, 0xd6, 0x44, 0
 
 // PowerWriter open communication interface types
 /* Do not try to change the following definitions !!!! */
-#define PW_OEM_LENGTH 8        // PowerWriter OEM length
-#define PW_SN_LENGTH 32        // PowerWriter SN length
-#define PW_VERSION_LENGTH 8    // PowerWriter version information length
-#define PW_TARGET_NAME_MAX 16  // PowerWriter target name max length
-#define PW_TARGET_ID_MAX 16    // Target chip ID MAX size
-#define PW_PACKAGE_SIZE 256    // Buffer size of block data
-#define PW_OB_MAX 1024         // Target chip option byte MAX size;
-#define PW_PROJECT_PWD_SIZE 16 // PowerWriter project password max size
-#define PW_ENUM_MAX INT32_MAX  // PowerWriter default enum max value
-#define PW_AT_CACHE_CMDS_MIN 1 // The number of instructions allowed to be cached ( >= 1)
-#define PW_AT_FRAME_HDR_SIZE 4	// PowerWriter AT command frame header size
-#define PW_AT_FRAME_HDR_STR	"PWAT"	//PowerWriter AT command frame header string
+#define PW_OEM_LENGTH 8             // PowerWriter OEM length
+#define PW_SN_LENGTH 32             // PowerWriter SN length
+#define PW_VERSION_LENGTH 8         // PowerWriter version information length
+#define PW_TARGET_NAME_MAX 16       // PowerWriter target name max length
+#define PW_TARGET_ID_MAX 16         // Target chip ID MAX size
+#define PW_PACKAGE_SIZE 256         // Buffer size of block data
+#define PW_OB_MAX 1024              // Target chip option byte MAX size;
+#define PW_PROJECT_PWD_SIZE 16      // PowerWriter project password max size
+#define PW_ENUM_MAX INT32_MAX       // PowerWriter default enum max value
+#define PW_AT_CACHE_CMDS_MIN 1      // The number of instructions allowed to be cached ( >= 1)
+#define PW_AT_FRAME_HDR_SIZE 4      // PowerWriter AT command frame header size
+#define PW_AT_FRAME_HDR_STR "PWAT"  // PowerWriter AT command frame header string
 #define PW_AT_DEFAULT_BAUDRATE 9600 // PowerWriter AT command default baud rate
-#define PW_AT_TIMEOUT_BASE	5000			// PowerWriter AT command timeout general
-#define PW_AT_TIMEOUT_MIN		100				// PowerWriter AT command timeout min 
-#define PW_AT_DEFAULT_PASSWORD	0x00	// Default powerwriter project key
+#define PW_AT_TIMEOUT_BASE 5000     // PowerWriter AT command timeout general
+#define PW_AT_TIMEOUT_MIN 100       // PowerWriter AT command timeout min
+#define PW_AT_DEFAULT_PASSWORD 0x00 // Default powerwriter project key
 /* multi threading */
 #ifndef __arm__
 //#include <thread>
@@ -92,11 +92,11 @@ static uint8_t m_at_encrypt_iv_[] = {0xca, 0x51, 0x1b, 0x68, 0x19, 0xd6, 0x44, 0
 #define ZERO_PTR(p_obj) memset(p_obj, 0, sizeof(*p_obj))
 
 #ifndef MIN
-#define MIN(a,b) ((a) < (b)? (a):(b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 #ifndef ARRAYSIZE
-#define	ARRAY_SIZE(T)		(sizeof(T)/sizeof(T[0])) 
+#define ARRAY_SIZE(T) (sizeof(T) / sizeof(T[0]))
 #endif
 
 #endif

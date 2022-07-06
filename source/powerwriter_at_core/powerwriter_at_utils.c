@@ -23,18 +23,21 @@
 #include "powerwriter_at_log.h"
 
 // round up
-size_t	utils_round_up(size_t number, size_t base) {
-	if (number % base) {
+size_t utils_round_up(size_t number, size_t base)
+{
+	if (number % base)
+	{
 		return (number / base + 1) * base;
 	}
 	return number;
 }
 
-// print object 
-void object_print(void * obj, size_t size, const char *objname) {
+// print object
+void object_print(void *obj, size_t size, const char *objname)
+{
 	powerwriter_at_log(LOGD, "$%s[%d]:{", objname, size);
-	uint8_t * p = (uint8_t *)obj;
-	size_t  count = 0;
+	uint8_t *p = (uint8_t *)obj;
+	size_t count = 0;
 	do
 	{
 		count++;

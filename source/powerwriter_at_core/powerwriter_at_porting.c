@@ -18,18 +18,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #include "powerwriter_at_porting.h"
 #include "3rd/crc/crc.h"
 
-#ifdef 	__arm__		
+#ifdef __arm__
 #include <stdio.h>
 #include "stm32f1xx_hal.h"
 #else
 #include <time.h>
 #endif
 
-//Sleep
+// Sleep
 #ifdef WIN32
 #include <windows.h>
 #elif defined(__GNUC__)
@@ -38,32 +38,32 @@
 
 /*
  Get System ticks
- */ 
-uint32_t	GetSystemTick()
+ */
+uint32_t GetSystemTick()
 {
-#ifdef 	__arm__		/* arm complier */
+#ifdef __arm__ /* arm complier */
 	return HAL_GetTick();
-#else				/* other complier in client */
+#else /* other complier in client */
 	return (int)clock();
-#endif	
-	
+#endif
 }
 
 /*
  Sleep
 */
-void ATSleep(uint32_t ms) {
+void ATSleep(uint32_t ms)
+{
 #ifdef WIN32
 	Sleep(ms);
 #elif defined(__GNUC__)
 	usleep(ms);
 #else
 	uint32_t ts = GetSystemTick();
-	while (GetSystemTick() - ts < ms);
+	while (GetSystemTick() - ts < ms)
+		;
 #endif
-	//add a sleep interface to your platform or operating system ...
+	// add a sleep interface to your platform or operating system ...
 	//...
-
 }
 
 /* log enable ?*/
@@ -75,15 +75,15 @@ extern "C"
 {
 	int fputc(int ch, FILE *f)
 	{
-			HAL_UART_Transmit(&huart1,(uint8_t *)&ch,1,10);
-			return (ch);
+		HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 10);
+		return (ch);
 	}
 }
 #endif
 #endif
 
 /* crc */
-uint32_t	GetCrc32(const void * data, size_t size)
+uint32_t GetCrc32(const void *data, size_t size)
 {
 #ifdef POWERWRITER_AT_HWCRC_ENABLE
 	/*
@@ -97,4 +97,3 @@ uint32_t	GetCrc32(const void * data, size_t size)
 	return crc32(data, (int)size);
 #endif
 }
-

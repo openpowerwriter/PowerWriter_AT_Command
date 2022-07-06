@@ -60,9 +60,9 @@ extern "C"
 		ATCmdEraseTarget,		 // Erase target chip (full)
 		ATCmdEraseTargetSectors, // Erase target sectors
 
-		ATCmdWriteTargetMemoryPrepare,	// Prepare to Write target memory, ( Note: 
-																		// Reports the total length of data that needs to be written)
-																		// Double buffering to improve write speed
+		ATCmdWriteTargetMemoryPrepare, // Prepare to Write target memory, ( Note:
+									   // Reports the total length of data that needs to be written)
+									   // Double buffering to improve write speed
 
 		ATCmdWriteTargetMemory, // Write target memory
 
@@ -88,7 +88,7 @@ extern "C"
 
 		// Other command fields
 		ATCmdBroadcast = 400, // Broadcast data
-		//...
+							  //...
 
 		// State instruction
 		ATCmdStatusOK = (PW_ENUM_MAX - 100), // Status Ok
@@ -139,19 +139,22 @@ extern "C"
 	} S_ATCmdStatusProgress;
 
 	// AT Cmd Status
-	typedef enum E_ATStatus {
+	typedef enum E_ATStatus
+	{
 		ATStatusUnknown = 0,
 		ATStatusOk = 0,
 		ATStatusProgress,
 		ATStatusError,
 		_ATStatusMax = PW_ENUM_MAX
-	}E_ATStatus;
-	typedef struct S_ATCmdStatus {
+	} E_ATStatus;
+	typedef struct S_ATCmdStatus
+	{
 		E_ATStatus m_statusType;
-		union {
+		union
+		{
 			S_ATCmdStatusProgress m_progress;
-		}param;
-	}S_ATCmdStatus;
+		} param;
+	} S_ATCmdStatus;
 
 	// ATCmdRspWriterInfo
 	typedef struct S_ATCmdRspWriterInfo
@@ -189,11 +192,11 @@ extern "C"
 	// Offline configure
 	typedef struct S_OfflineWriterCfg
 	{
-		uint8_t m_limitOfNumberEnable;	 // 0 : disable 1: enable    (notice: You can only view, but cannot change !!!)
-		uint32_t m_limitOfNumber;		 // Current remaining quantity (notice: You can only view, but cannot change !!!)
-		uint8_t m_targetAutoEnable;		 // 0: disable 1:enable
-		uint16_t m_targetAutoInDebounce; // Target connected debounce time
-		uint16_t m_targetAutoOutDebounce;		 // Target disconnected debounce time
+		uint8_t m_limitOfNumberEnable;	  // 0 : disable 1: enable    (notice: You can only view, but cannot change !!!)
+		uint32_t m_limitOfNumber;		  // Current remaining quantity (notice: You can only view, but cannot change !!!)
+		uint8_t m_targetAutoEnable;		  // 0: disable 1:enable
+		uint16_t m_targetAutoInDebounce;  // Target connected debounce time
+		uint16_t m_targetAutoOutDebounce; // Target disconnected debounce time
 	} S_OfflineWriterCfg;
 	// Output Ctrl configure
 	typedef struct S_OutputCtrlWriterCfg
@@ -284,18 +287,18 @@ extern "C"
 
 	typedef struct S_ATCmdBroadcast
 	{
-		uint8_t m_keepATFrame;				 // 0 : Forwarding valid data, 1: forwarding Full AT frame data
-		S_ATCmdBroadcastDir m_dirType; // Direction
-		uint32_t m_size;									 // Activate size
-		uint8_t m_data[PW_PACKAGE_SIZE];	 // data
+		uint8_t m_keepATFrame;			 // 0 : Forwarding valid data, 1: forwarding Full AT frame data
+		S_ATCmdBroadcastDir m_dirType;	 // Direction
+		uint32_t m_size;				 // Activate size
+		uint8_t m_data[PW_PACKAGE_SIZE]; // data
 	} S_ATCmdBroadcast;
 
-
-	typedef struct S_ChipMemoryCfg {
+	typedef struct S_ChipMemoryCfg
+	{
 		uint32_t m_s_addr;
 		uint32_t m_e_addr;
-		char * m_name;
-	}S_ChipMemoryCfg;
+		char *m_name;
+	} S_ChipMemoryCfg;
 
 #pragma pack(pop)
 
@@ -346,10 +349,10 @@ extern "C"
 	// PowerWriter AT command payload
 	typedef struct S_ATCmdPayload
 	{
-		E_ATCmdType m_cmdType;		   // Type
-		uint32_t m_cmdSize;			   // Size
-		U_ATCmdProperty m_cmdProperty; // Payload
-		uint8_t		_m_align[POWERWRITER_AT_PACKAGE_ALIGN];	//align for encrypt
+		E_ATCmdType m_cmdType;							// Type
+		uint32_t m_cmdSize;								// Size
+		U_ATCmdProperty m_cmdProperty;					// Payload
+		uint8_t _m_align[POWERWRITER_AT_PACKAGE_ALIGN]; // align for encrypt
 	} S_ATCmdPayload;
 
 	// PowerWriter AT Command Frame
@@ -364,7 +367,7 @@ extern "C"
 	// PowerWriter AT command buffer
 	typedef struct S_ATCmdBuffer
 	{
-		uint32_t m_index;																				// current buffer
+		uint32_t m_index;											   // current buffer
 		uint8_t m_buffer[sizeof(S_ATCmdFrame) * PW_AT_CACHE_CMDS_MIN]; // cache buffer
 	} S_ATCmdBuffer;
 
@@ -379,8 +382,8 @@ extern "C"
 
 	// PowerWriter AT command config
 	typedef void (*ATCmdEventOut)(void *obj, S_ATCmdEvent event);
-	typedef bool (*ATCmdStreamOut)(S_ATCmdFrame * pf, int timeout);
-	typedef void(*ATProgress)(S_ATCmdStatusProgress * pp);
+	typedef bool (*ATCmdStreamOut)(S_ATCmdFrame *pf, int timeout);
+	typedef void (*ATProgress)(S_ATCmdStatusProgress *pp);
 
 	typedef struct S_ATCmdConfig
 	{
