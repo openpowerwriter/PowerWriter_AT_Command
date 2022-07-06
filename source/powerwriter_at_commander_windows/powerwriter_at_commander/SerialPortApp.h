@@ -61,7 +61,7 @@ public:
 	/* Connect Device */
 	bool ConnectSerialPort(
 		std::string Device,
-		int BaudRate = PW_AT_DEFAULT_BAUDRATE,
+		int BaudRate = 256000,
 		itas109::Parity Parity = itas109::Parity::ParityNone,
 		itas109::DataBits DataBits = itas109::DataBits::DataBits8,
 		itas109::StopBits StopBits = itas109::StopBits::StopOne

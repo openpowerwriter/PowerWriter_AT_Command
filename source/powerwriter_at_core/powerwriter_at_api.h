@@ -76,6 +76,27 @@ extern "C"
 	// Write target user's option byte
 	extern bool powerwriter_at_target_write_user_ob(S_ATChannel *ch, int timout_ms);
 
+	// Get offline project information
+	extern bool powerwriter_at_project_info(S_ATChannel *ch, S_ATCmdRspProjectInfo ** ppproject);
+	// Disable offline project
+	extern bool powerwriter_at_project_disable(S_ATChannel *ch);
+	// Load offline project
+	extern bool powerwriter_at_project_load(S_ATChannel *ch, const char * password, const void * prj_data, size_t prj_size, ATProgress p_cb);
+	// start offline program
+	extern bool powerwriter_at_offline_start(S_ATChannel *ch);
+	// query offline status
+	extern bool powerwriter_at_offline_status(S_ATChannel *ch, S_ATCmdStatus * ps);
+
+	//easy broadcast no rsp 
+	extern bool powerwriter_at_easy_broadcast_no_rsp(S_ATChannel *ch, const void * bcdata, size_t bcsize, S_ATCmdBroadcastDir bcdir);
+	//broadcast
+	extern bool powerwriter_at_broadcast(S_ATChannel *ch, const void * bcdata, size_t bcsize, S_ATCmdBroadcastDir bcdir,bool keepframe,
+																bool waitrsp, S_ATCmdBroadcast * prsp, int waitrsptimeout);
+	/* factory test */
+	//run factory sram firmware
+	bool powerwriter_at_run_factory_sram_fw(S_ATChannel *ch);
+	//run factory flash firmware
+	bool powerwriter_at_run_factory_flash_fw(S_ATChannel *ch);
 
 #ifdef __cplusplus
 }

@@ -1,17 +1,5 @@
-﻿  aes.c
-  crc32.c
-  powerwriter_at_api.c
-  powerwriter_at_cert.c
-  powerwriter_at_porting.c
+﻿  powerwriter_at_api.c
   powerwriter_at_samples.c
-  powerwriter_at_utils.c
   正在生成代码...
-  SerialPort.cpp
-  SerialPortBase.cpp
-  SerialPortInfo.cpp
-  SerialPortInfoBase.cpp
-  SerialPortInfoWinBase.cpp
-  SerialPortWinBase.cpp
   powerwriter_at_commander.cpp
-  正在生成代码...
   powerwriter_at_commander.vcxproj -> E:\MainProjects\2022\PowerWriter_AT_Command\source\powerwriter_at_commander_windows\Debug\powerwriter_at_commander.exe

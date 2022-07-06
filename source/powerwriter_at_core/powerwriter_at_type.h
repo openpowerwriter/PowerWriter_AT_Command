@@ -88,7 +88,7 @@ extern "C"
 
 		// Other command fields
 		ATCmdBroadcast = 400, // Broadcast data
-							  //...
+		//...
 
 		// State instruction
 		ATCmdStatusOK = (PW_ENUM_MAX - 100), // Status Ok
@@ -137,6 +137,21 @@ extern "C"
 		uint32_t m_total;	  // Total size
 		uint32_t m_processed; // Processed size
 	} S_ATCmdStatusProgress;
+
+	// AT Cmd Status
+	typedef enum E_ATStatus {
+		ATStatusUnknown = 0,
+		ATStatusOk = 0,
+		ATStatusProgress,
+		ATStatusError,
+		_ATStatusMax = PW_ENUM_MAX
+	}E_ATStatus;
+	typedef struct S_ATCmdStatus {
+		E_ATStatus m_statusType;
+		union {
+			S_ATCmdStatusProgress m_progress;
+		}param;
+	}S_ATCmdStatus;
 
 	// ATCmdRspWriterInfo
 	typedef struct S_ATCmdRspWriterInfo
@@ -259,19 +274,19 @@ extern "C"
 	} S_ATCmdLoadProjectSend;
 
 	// Broadcast
-	typedef enum S_ATCmdBroadcastDirection
+	typedef enum S_ATCmdBroadcastDir
 	{
 		DIR_CDC2UART, // Forwarding from USB to UART
 		DIR_UART2CDC, // Forwarding from UART to USB
 
 		_DIR_MAX_ = PW_ENUM_MAX
-	} S_ATCmdBroadcastDirection;
+	} S_ATCmdBroadcastDir;
 
 	typedef struct S_ATCmdBroadcast
 	{
 		uint8_t m_keepATFrame;				 // 0 : Forwarding valid data, 1: forwarding Full AT frame data
-		S_ATCmdBroadcastDirection m_dirType; // Direction
-		uint32_t m_size;					 // Activate size
+		S_ATCmdBroadcastDir m_dirType; // Direction
+		uint32_t m_size;									 // Activate size
 		uint8_t m_data[PW_PACKAGE_SIZE];	 // data
 	} S_ATCmdBroadcast;
 
@@ -365,6 +380,8 @@ extern "C"
 	// PowerWriter AT command config
 	typedef void (*ATCmdEventOut)(void *obj, S_ATCmdEvent event);
 	typedef bool (*ATCmdStreamOut)(S_ATCmdFrame * pf, int timeout);
+	typedef void(*ATProgress)(S_ATCmdStatusProgress * pp);
+
 	typedef struct S_ATCmdConfig
 	{
 		bool m_encryptEnable;		/* encrypt ? */

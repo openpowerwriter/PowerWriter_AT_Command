@@ -83,7 +83,7 @@ extern "C"
 #endif
 
 /* crc */
-uint32_t	GetCrc32(void * data, size_t size)
+uint32_t	GetCrc32(const void * data, size_t size)
 {
 #ifdef POWERWRITER_AT_HWCRC_ENABLE
 	/*

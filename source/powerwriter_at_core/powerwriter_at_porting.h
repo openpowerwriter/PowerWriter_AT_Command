@@ -31,7 +31,7 @@ extern "C" {
 
 uint32_t	GetSystemTick(void);									/* Get System Tick */
 void			ATSleep(uint32_t);										/* Delay ms */
-uint32_t	GetCrc32(void * data, size_t size);		/* Get crc16 */
+uint32_t	GetCrc32(const void * data, size_t size);		/* Get crc16 */
 
 #ifdef __cplusplus
 }

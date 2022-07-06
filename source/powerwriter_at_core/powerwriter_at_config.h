@@ -60,6 +60,8 @@ static uint8_t m_at_encrypt_iv_[] = {0xca, 0x51, 0x1b, 0x68, 0x19, 0xd6, 0x44, 0
 #define PW_AT_FRAME_HDR_STR	"PWAT"	//PowerWriter AT command frame header string
 #define PW_AT_DEFAULT_BAUDRATE 9600 // PowerWriter AT command default baud rate
 #define PW_AT_TIMEOUT_BASE	5000			// PowerWriter AT command timeout general
+#define PW_AT_TIMEOUT_MIN		100				// PowerWriter AT command timeout min 
+#define PW_AT_DEFAULT_PASSWORD	0x00	// Default powerwriter project key
 /* multi threading */
 #ifndef __arm__
 //#include <thread>

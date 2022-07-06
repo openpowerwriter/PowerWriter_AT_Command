@@ -64,7 +64,7 @@ E_ATCmdError powerwriter_at_last_error(
 	S_ATChannel *ch
 ) {
 	AT_CHECK_PARAM(ch, ATErrorNone)
-		return ch->m_config.m_lastError;
+	return ch->m_config.m_lastError;
 }
 
 /* Set last error */
@@ -207,7 +207,8 @@ bool powerwriter_at_datain(
 /*
  * @brief Get the received package 
  * @pram 	ch: AT channel object
- * @return  const S_ATCmdFrame * 
+ * @return  const S_ATCmdFrame 
+ * 
  */
 const S_ATCmdFrame * powerwriter_at_received_frame(
 	S_ATChannel *ch
@@ -240,7 +241,20 @@ static	size_t	_cmdGetPropertySize(
 					pf->m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_size;
 	case ATCmdReadTargetOptionByte:			return sizeof(S_ATCmdReadTargetOptionByte);							//Read target option byte
 	case ATCmdWriteTargetVendorOptionByte:	return sizeof(S_ATCmdWriteTargetVendorOptionByte);	//Write target vendor default option byte
-	case ATCmdWriteTargetUserOptionByte:return sizeof(S_ATCmdWriteTargetUserOptionByte);//Write target user's option byte
+	case ATCmdWriteTargetUserOptionByte:return sizeof(S_ATCmdWriteTargetUserOptionByte);				//Write target user's option byte
+	case ATCmdGetProjectInfo:						return sizeof(S_ATCmdGetProjectInfo);						//Get project info
+	case ATCmdLoadProject:							return sizeof(S_ATCmdLoadProject);							//Load project start
+	case ATCmdLoadProjectSend:					return sizeof(S_ATCmdLoadProjectSend);					//Load project send pack
+	case ATCmdDisableProject:						return sizeof(S_ATCmdDisableProject);						//Disable project
+	case ATCmdStartOffline:							return sizeof(S_ATCmdStartOffline);							//Start offline program
+	case ATCmdGetOfflineStatus:					return sizeof(S_ATCmdGetOfflineStatus);					//Get offline program status
+	case ATCmdBroadcast:																																//Broadcast
+			return  sizeof(pf->m_payload.m_cmdProperty.m_ATCmdBroadcast.m_keepATFrame) +
+				sizeof(pf->m_payload.m_cmdProperty.m_ATCmdBroadcast.m_dirType) +
+				sizeof(pf->m_payload.m_cmdProperty.m_ATCmdBroadcast.m_size) +
+				pf->m_payload.m_cmdProperty.m_ATCmdBroadcast.m_size;
+	case ATCmdFactoryRunSRAMFW:					return sizeof(S_ATCmdFactoryRunSRAMFW);					//Run factory plug-in SRAM firmware
+	case ATCmdFactoryRunFlashFW:				return sizeof(S_ATCmdFactoryRunFlashFW);					//Run factory plug-in Flash firmware
 	default:
 		return 0;
 	}
@@ -584,7 +598,7 @@ bool powerwriter_at_target_write(
 /*
  * @brief Read target option byte
  * @pram 	ch: AT channel object
-					
+ *				ppob: out put option byte			
  * @return  Returns true on success, false otherwise
  */
 
@@ -627,4 +641,232 @@ bool powerwriter_at_target_write_user_ob(
 	int timout_ms) {
 	AT_CHECK_PARAM(ch, false)
 	return _powerwriter_at_send_command(ch, ATCmdWriteTargetUserOptionByte, timout_ms);
+}
+
+
+/*
+ * @brief Get powerwriter project info
+ * @pram 	ch: AT channel object
+ *				ppob: out put option byte
+ * @return  Returns true on success, false otherwise
+ */
+
+bool powerwriter_at_project_info(
+	S_ATChannel *ch,
+	S_ATCmdRspProjectInfo ** ppproject) {
+	AT_CHECK_PARAM(ch, false)
+	AT_CHECK_PARAM(ppproject, false)
+	if (_cmdSendCommand(ch, ATCmdGetProjectInfo, PW_AT_TIMEOUT_BASE)) {
+		if (ch->m_cmdInput.m_payload.m_cmdType == ATCmdRspProjectInfo) {
+			*ppproject = &ch->m_cmdInput.m_payload.m_cmdProperty.m_ATCmdRspProjectInfo;
+			return true;
+		}
+	}
+	*ppproject = NULL;
+	return false;
+}
+
+/*
+ * @brief disable powerwriter stored project
+ * @pram 	ch: AT channel object
+ * @return  Returns true on success, false otherwise
+ */
+bool powerwriter_at_project_disable(
+	S_ATChannel *ch) {
+	AT_CHECK_PARAM(ch, false)
+	return _powerwriter_at_send_command(ch, ATCmdDisableProject, PW_AT_TIMEOUT_BASE);
+}
+
+/*
+ * @brief load powerwriter project
+ * @pram 	ch: AT channel object
+ *        password: project password
+ *				prj_data: project data
+ *        prj_size: project size
+ *        p_cb: progress call back 
+ * @return  Returns true on success, false otherwise
+ */
+bool _powerwriter_at_project_load_send(S_ATChannel *ch, uint8_t * data,	uint32_t size,uint32_t offset	)
+{
+	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProjectSend.m_offset = offset;
+	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProjectSend.m_Size = size;
+	memcpy(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProjectSend.m_data,data, size);
+	return _powerwriter_at_send_command(ch, ATCmdLoadProjectSend, PW_AT_TIMEOUT_BASE);
+}
+
+bool powerwriter_at_project_load(
+	S_ATChannel *ch,
+	const char * password,
+	const void * prj_data,
+	size_t prj_size,
+	ATProgress p_cb) {
+	AT_CHECK_PARAM(ch, false)
+	AT_CHECK_PARAM(password, false) 
+	AT_CHECK_PARAM(prj_data, false)
+	/* start signal */
+	if (strlen(password) > 
+		sizeof(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_password)) {
+		_cmdSetLastError(ch, ATErrorKey);
+		return false;
+	}
+	//password
+	memset(&ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_password, PW_AT_DEFAULT_PASSWORD,
+		sizeof(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_password));
+	memcpy(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_password, password,strlen(password));
+	//size
+	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_projectSize = prj_size;
+	//crc
+	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_projectCRC32 = GetCrc32(prj_data, prj_size);
+	if (_powerwriter_at_send_command(ch, ATCmdLoadProject, PW_AT_TIMEOUT_BASE)) {
+		size_t	packlength = 0;
+		S_ATCmdStatusProgress progress;
+		progress.m_total = prj_size;
+		progress.m_processed = 0;
+		while (progress.m_processed < progress.m_total) {
+			packlength = MIN(progress.m_total - progress.m_processed, PW_PACKAGE_SIZE);
+			if (!_powerwriter_at_project_load_send(ch, (uint8_t *)prj_data + progress.m_processed, packlength, progress.m_processed)) {
+				return false;
+			}
+			progress.m_processed += packlength;
+			if (p_cb) {
+				p_cb(&progress);
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
+/*
+ * @brief start offline program
+ * @pram 	ch: AT channel object
+ * @return  Returns true on success, false otherwise
+ */
+bool powerwriter_at_offline_start(
+	S_ATChannel *ch) {
+	AT_CHECK_PARAM(ch, false)
+	return _powerwriter_at_send_command(ch, ATCmdStartOffline, PW_AT_TIMEOUT_BASE);
+}
+
+/*
+ * @brief start offline program
+ * @pram 	ch: AT channel object
+ * @return  Returns true on success, false otherwise
+ */
+bool powerwriter_at_offline_status(
+	S_ATChannel *ch, S_ATCmdStatus * ps) {
+	AT_CHECK_PARAM(ch, false)
+	AT_CHECK_PARAM(ps, false)
+	if (_cmdSendCommand(ch, ATCmdGetOfflineStatus, PW_AT_TIMEOUT_BASE)) {
+		switch (ch->m_cmdInput.m_payload.m_cmdType)
+		{
+		case ATCmdStatusOK:	
+			ps->m_statusType = ATStatusOk;
+			break;
+		case ATCmdStatusError:
+			ps->m_statusType = ATStatusError;
+			break;
+		case ATCmdStatusProgress:
+			ps->m_statusType = ATStatusProgress;
+			ps->param.m_progress = ch->m_cmdInput.m_payload.m_cmdProperty.m_ATCmdStatusProgress;
+			break;
+		default:
+			ps->m_statusType = ATStatusUnknown;
+			break;
+		}
+		return true;
+	}
+	return false;
+}
+
+/*
+ * @brief powerwriter at broadcast
+ * @pram 	ch: AT channel object
+ *				bcdata£ºbroadcast data
+ *				bcsize£ºbroadcast data size
+ *				bcdir£ºbroadcast direction
+ *				keepframe£ºWhether to keep the original AT frame 
+ *				waitrsp£ºWhether to wait for a response
+ *				waitrsptimeout£ºif (waitrsp == true), set timeout for respone
+ * notice:	
+ * 				The maximum data length for a single broadcast is 256. 
+ *				If the maximum data length exceeds 256, you need to subcontract the broadcast 
+ *	
+ * @return  Returns true on success, false otherwise
+ */
+bool powerwriter_at_broadcast(
+	S_ATChannel *ch,
+	const void * bcdata,
+	size_t bcsize,
+	S_ATCmdBroadcastDir bcdir,
+	bool keepframe,
+	bool waitrsp,
+	S_ATCmdBroadcast * prsp,
+	int waitrsptimeout) {
+	AT_CHECK_PARAM(ch, false)
+	AT_CHECK_PARAM(bcdata, false)
+	bcsize = MIN(bcsize, sizeof(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdBroadcast.m_data));
+	if (bcsize) {
+		//set broadcast property
+		ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdBroadcast.m_keepATFrame = keepframe;
+		ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdBroadcast.m_dirType = bcdir;
+		ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdBroadcast.m_size = bcsize;
+		memcpy(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdBroadcast.m_data, bcdata, bcsize);
+		//set timeout
+		int timeout = waitrsp ? waitrsptimeout : 0;
+		if (timeout < PW_AT_TIMEOUT_MIN) {
+			timeout = PW_AT_TIMEOUT_MIN;
+		}
+		if (_cmdSendCommand(ch, ATCmdBroadcast, timeout)) {
+			switch (ch->m_cmdInput.m_payload.m_cmdType)
+			{
+			case ATCmdBroadcast:
+				if (prsp) {
+					*prsp = ch->m_cmdInput.m_payload.m_cmdProperty.m_ATCmdBroadcast;
+				}
+				return true;
+				break;
+			case ATCmdStatusError:	/* respone is error, */
+			default:
+				return false;
+			}
+		}
+		else {
+			return waitrsp ? false : true;
+		}
+	}
+	_cmdSetLastError(ch,ATErrorSize);
+	return false;
+}
+//easy broadcast for no respone
+bool powerwriter_at_easy_broadcast_no_rsp(
+	S_ATChannel *ch,
+	const void * bcdata,
+	size_t bcsize,
+	S_ATCmdBroadcastDir bcdir) {
+	return powerwriter_at_broadcast(ch, bcdata, bcsize, bcdir, false, false, NULL, 0);
+}
+
+
+/*
+ * @brief run factory sram firmware
+ * @pram 	ch: AT channel object
+ * @return  Returns true on success, false otherwise
+ */
+bool powerwriter_at_run_factory_sram_fw(
+	S_ATChannel *ch) {
+	AT_CHECK_PARAM(ch, false)
+	return _powerwriter_at_send_command(ch, ATCmdFactoryRunSRAMFW, PW_AT_TIMEOUT_BASE);
+}
+
+
+/*
+ * @brief run factory flash firmware
+ * @pram 	ch: AT channel object
+ * @return  Returns true on success, false otherwise
+ */
+bool powerwriter_at_run_factory_flash_fw(
+	S_ATChannel *ch) {
+	AT_CHECK_PARAM(ch, false)
+	return _powerwriter_at_send_command(ch, ATCmdFactoryRunFlashFW, PW_AT_TIMEOUT_BASE);
 }
