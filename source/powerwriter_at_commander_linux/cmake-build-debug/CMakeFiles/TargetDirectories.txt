@@ -1,6 +1,0 @@
-E:/MainProjects/2022/PowerWriter_AT_Command/source/powerwriter_at_commander/cmake-build-debug/CMakeFiles/powerwriter_at_commander.dir
-E:/MainProjects/2022/PowerWriter_AT_Command/source/powerwriter_at_commander/cmake-build-debug/CMakeFiles/edit_cache.dir
-E:/MainProjects/2022/PowerWriter_AT_Command/source/powerwriter_at_commander/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-E:/MainProjects/2022/PowerWriter_AT_Command/source/powerwriter_at_commander/cmake-build-debug/powerwriter_at_core/CMakeFiles/powerwriter_at_core.dir
-E:/MainProjects/2022/PowerWriter_AT_Command/source/powerwriter_at_commander/cmake-build-debug/powerwriter_at_core/CMakeFiles/edit_cache.dir
-E:/MainProjects/2022/PowerWriter_AT_Command/source/powerwriter_at_commander/cmake-build-debug/powerwriter_at_core/CMakeFiles/rebuild_cache.dir
