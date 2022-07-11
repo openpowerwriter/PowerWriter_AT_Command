@@ -136,6 +136,14 @@ extern "C"
 		_ATErrorPrivate_SOF,
 		ATErrorVendorSignCrush, // The vendor signature data is corrupted
 		ATErrorVendorNoSign,	// The current target chip has no signature
+			
+		ATErrorFactoryTestDisable,			//Factory test not enable
+		ATErrorFactoryTestSRAMFWNone,		//Factory test no SRAM firmware
+		ATErrorFactoryTestFlashFWNone,	//Factory test no flash firmware
+		ATErrorWriteSRAM,								//Write SRAM failure
+		ATErrorBaudrate,								//AT baudrate 
+		ATErrorBroadcastDir,						//Broadcast direction error
+		ATErrorBroadcastKeep,						// Need keep AT frame to send
 
 		_ATErrorMAX = PW_ENUM_MAX
 	} E_ATCmdError;
