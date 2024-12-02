@@ -107,6 +107,7 @@ AT命令端口，支持从PowerWriter 两端控制输入和输出，即 USB-CDC 
         ATCmdRspTargetOptionByte,         // Respone target option byte
         ATCmdWriteTargetVendorOptionByte, // Write vendor's default option byte to target
         ATCmdWriteTargetUserOptionByte,   // Write user's option byte to target
+        ATCmdResetTarget,	//Reset target
 
         // Offline mode target chip operation
         ATCmdGetProjectInfo = 200, // Get project info from PowerWriter
