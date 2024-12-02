@@ -144,6 +144,8 @@ extern "C"
 		ATErrorBaudrate,								//AT baudrate 
 		ATErrorBroadcastDir,						//Broadcast direction error
 		ATErrorBroadcastKeep,						// Need keep AT frame to send
+		ATErrorAtUartDisable,						// AT UART AT disabled
+		ATErrorFactoryTestFailed,				// AT factory test failed
 
 		_ATErrorMAX = PW_ENUM_MAX
 	} E_ATCmdError;

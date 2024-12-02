@@ -17,69 +17,6 @@ AT命令端口，支持从PowerWriter 两端控制输入和输出，即 USB-CDC 
 
 - USB-CDC ：用户可以通过USB-CDC 下发数据到PowerWriter ，也可以通过PowerWriter 支持的AT 命令控制PowerWriter 的行为，读取状态或者数据，这种模式适合用户二次开发桌面软件来集成PowerWriter 来控制生产流程。
 - 硬件端UART（输出串口）：用户除了使用USB -CDC 来控制PowerWriter 的行为之外，也可以将PowerWriter 集成到硬件控制系统中来来控制PowerWriter 的行为，数据上传和下载，这种模式适合脱离桌面系统的开发模式。
-
-仓库地址：
-
-```bash
-#github
-git clone https://github.com/openpowerwriter/PowerWriter_AT_Command
-```
-
-:::tip 科学上网提示
-
-- Github Hosts：[最新Github Hosts](https://raw.hellogithub.com/hosts)
-
-:::
-
-**刷新系统 DNS 缓存**
-
-import Tabs from '@theme/Tabs';
-		import TabItem from '@theme/TabItem';
-
-<Tabs>
- 		 <TabItem value="windows" label="Windows" default>
-
-```bash
- #Windows 刷新DNS
- ipconfig /flushdns
-```
-
- 		 </TabItem>
- 		<TabItem value="linux" label="Linux">
-
-
-```bash
-#ubuntu
-sudo /etc/init.d/networking restart
-#如果提示错误，请安装nscd
-sudo apt install nscd
-
-#CentOS
-nscd -i hosts
-service nscd restart
-
-```
-
-  		</TabItem>
-  		<TabItem value="macos" label="MacOS">
-
-```bash
-sudo killall -HUP mDNSResponder && echo macOS DNS Cache Reset
-
-# 以上命令可能不同系统会有区别
-#Mac OS Sierra, Mac OS X El Capitan, Mac OS X Mavericks, Mac OS X Mountain Lion, Mac OS X Lion操作系统使用以下命令	
-sudo killall -HUP mDNSResponder
-#Mac OS X Yosemite操作系统使用以下命令
-sudo discoveryutil udnsflushcaches
-#Mac OS X Snow Leopard操作系统使用以下命令	
-sudo dscacheutil -flushcache
-#Mac OS X Leopard and below操作系统使用以下命令	
-sudo lookupd -flushcache
-```
-
-  		</TabItem>
-  		</Tabs>
-
 ## 1.2 AT 命令使能
 
 硬件AT 命令接口默认为**关闭状态**，如需开启，请参考 [**设备首选项**](./powerwriter#device_preferences)
@@ -618,6 +555,49 @@ ATCmdWriteTargetUserOptionByte
 :::caution 注意
 
 写入选项字，数据来源于离线项目(pkg)中数据，必须确保先预载
+
+:::
+
+#### 1.4.2.14 复位目标芯片{#ATCmdTargetReset}
+
+ATCmdTargetReset
+
+**调用参数**：S_ATCmdTargetReset
+
+```c
+// Reset Target type
+typedef enum E_resetType
+{
+    HWKeepLow,				//Hardware Keeplow
+    HWNoneReset,			//Hardware high resistance state
+    HWReset,				//Hardware reset
+    HWCoreReset,			//Hardware & core reset
+    CoreReset,				//Soft Core Reset
+    VectorReset,			//Soft Vector Reset
+    POROnly,				//Power On Reset
+    PORAndRelease,			//Power On Reset and release port
+
+    _TARGET_RESET_ = PW_ENUM_MAX
+}E_resetType;
+
+typedef struct S_ATCmdObject
+{
+    union powerwriter_at_type
+    {
+        uint32_t resetType;    // Set UART AT new baudrate;
+    }property;
+}S_ATCmdTargetReset;
+```
+
+resetType:  复位目标芯片操作类型。
+
+**返回值：**
+
+[ATCmdStatusOK](#ATCmdStatusOK)、[ATCmdStatusError](#ATCmdStatusError)。
+
+:::caution 注意
+
+- 复位后，芯片会离线，如需再次执行在线操作，需要重新连接芯片，见连接芯片操作指令。
 
 :::
 

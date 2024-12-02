@@ -270,6 +270,8 @@ static size_t _cmdGetPropertySize(
 		return sizeof(S_ATCmdWriteTargetVendorOptionByte); // Write target vendor default option byte
 	case ATCmdWriteTargetUserOptionByte:
 		return sizeof(S_ATCmdWriteTargetUserOptionByte); // Write target user's option byte
+	case ATCmdTargetReset:
+		return sizeof(S_ATCmdTargetReset);		//Reset target 
 	case ATCmdGetProjectInfo:
 		return sizeof(S_ATCmdGetProjectInfo); // Get project info
 	case ATCmdLoadProject:
@@ -705,6 +707,22 @@ bool powerwriter_at_target_write_user_ob(
 }
 
 /*
+ * @brief Reset target chip
+ * @pram 	ch: AT channel object
+ *				type: reset type, refer to E_resetType
+ * @return  Returns true on success, false otherwise
+ */
+bool powerwriter_at_target_reset(
+	S_ATChannel *ch,
+	E_resetType type)
+{
+	AT_CHECK_PARAM(ch, false)
+	// Set property
+	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdTargetReset.property.m_resetType = type;
+	return _powerwriter_at_send_command(ch, ATCmdTargetReset, PW_AT_TIMEOUT_BASE);
+}
+
+/*
  * @brief Get powerwriter project info
  * @pram 	ch: AT channel object
  *				ppob: out put option byte
@@ -933,10 +951,10 @@ bool powerwriter_at_easy_broadcast_no_rsp(
  * @return  Returns true on success, false otherwise
  */
 bool powerwriter_at_run_factory_sram_fw(
-	S_ATChannel *ch)
+	S_ATChannel *ch, int timeout)
 {
 	AT_CHECK_PARAM(ch, false)
-	return _powerwriter_at_send_command(ch, ATCmdFactoryRunSRAMFW, PW_AT_TIMEOUT_BASE);
+	return _powerwriter_at_send_command(ch, ATCmdFactoryRunSRAMFW, timeout);
 }
 
 /*
@@ -945,8 +963,8 @@ bool powerwriter_at_run_factory_sram_fw(
  * @return  Returns true on success, false otherwise
  */
 bool powerwriter_at_run_factory_flash_fw(
-	S_ATChannel *ch)
+	S_ATChannel *ch, int timeout)
 {
 	AT_CHECK_PARAM(ch, false)
-	return _powerwriter_at_send_command(ch, ATCmdFactoryRunFlashFW, PW_AT_TIMEOUT_BASE);
+	return _powerwriter_at_send_command(ch, ATCmdFactoryRunFlashFW, timeout);
 }

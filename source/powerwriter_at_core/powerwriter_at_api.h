@@ -75,6 +75,8 @@ extern "C"
 	extern bool powerwriter_at_target_write_vendor_ob(S_ATChannel *ch, int timout_ms);
 	// Write target user's option byte
 	extern bool powerwriter_at_target_write_user_ob(S_ATChannel *ch, int timout_ms);
+	// Reset target chip
+	extern bool powerwriter_at_target_reset(S_ATChannel *ch, E_resetType type);
 
 	// Get offline project information
 	extern bool powerwriter_at_project_info(S_ATChannel *ch, S_ATCmdRspProjectInfo **ppproject);
@@ -94,9 +96,9 @@ extern "C"
 										 bool waitrsp, S_ATCmdBroadcast *prsp, int waitrsptimeout);
 	/* factory test */
 	// run factory sram firmware
-	bool powerwriter_at_run_factory_sram_fw(S_ATChannel *ch);
+	bool powerwriter_at_run_factory_sram_fw(S_ATChannel *ch, int timeout);
 	// run factory flash firmware
-	bool powerwriter_at_run_factory_flash_fw(S_ATChannel *ch);
+	bool powerwriter_at_run_factory_flash_fw(S_ATChannel *ch, int timeout);
 
 #ifdef __cplusplus
 }

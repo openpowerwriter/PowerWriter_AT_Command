@@ -71,6 +71,8 @@ extern "C"
 		ATCmdWriteTargetVendorOptionByte, // Write vendor's default option byte to target
 		ATCmdWriteTargetUserOptionByte,	  // Write user's option byte to target
 
+		ATCmdTargetReset,				//AT Reset target
+
 		// Offline mode target chip operation
 		ATCmdGetProjectInfo = 200, // Get project info from PowerWriter
 		ATCmdRspProjectInfo,
@@ -110,6 +112,7 @@ extern "C"
 			uint32_t m_baudRate;	// Set UART AT new baudRate;
 			uint32_t m_errorCode;	// Status error code
 			uint32_t m_totalsize;	// total size
+			uint32_t m_resetType;	// Reset type
 		} property;
 	} S_ATCmdGetWriterInfo,
 		S_ATCmdGetWriterCfg,
@@ -129,7 +132,8 @@ extern "C"
 		S_ATCmdStartOffline,
 		S_ATCmdGetOfflineStatus,
 		S_ATCmdFactoryRunSRAMFW,
-		S_ATCmdFactoryRunFlashFW;
+		S_ATCmdFactoryRunFlashFW,
+		S_ATCmdTargetReset;
 
 	// ATCmdStatusProgress
 	typedef struct S_ATCmdStatusProgress
@@ -252,6 +256,22 @@ extern "C"
 		uint8_t m_OBData[PW_OB_MAX]; // Option byte data buffer
 	} S_ATCmdRspTargetOptionByte;
 
+	// Reset Target type
+	typedef enum E_resetType
+	{
+		HWKeepLow,				//Hardware Keeplow
+		HWNoneReset,			//Hardware high resistance state
+		HWReset,				//Hardware reset
+		HWCoreReset,			//Hardware & core reset
+		CoreReset,				//Soft Core Reset
+		VectorReset,			//Soft Vector Reset
+		POROnly,				//Power On Reset
+		PORAndRelease,			//Power On Reset and release port
+		
+		_TARGET_RESET_ = PW_ENUM_MAX
+	}E_resetType;
+
+
 	// Response offline project information
 	typedef struct S_ATCmdRspProjectInfo
 	{
@@ -327,6 +347,7 @@ extern "C"
 		S_ATCmdRspTargetOptionByte m_ATCmdRspTargetOptionByte;
 		S_ATCmdWriteTargetVendorOptionByte m_ATCmdWriteTargetVendorOptionByte;
 		S_ATCmdWriteTargetUserOptionByte m_ATCmdWriteTargetUserOptionByte;
+		S_ATCmdTargetReset m_ATCmdTargetReset;
 
 		S_ATCmdGetProjectInfo m_ATCmdGetProjectInfo;
 		S_ATCmdRspProjectInfo m_ATCmdRspProjectInfo;
