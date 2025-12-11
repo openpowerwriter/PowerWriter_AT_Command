@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Platforms>AnyCPU;x64</Platforms>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <StartupObject>powerwriter_at_sample.Program</StartupObject>
+    <Nullable>enable</Nullable>
+    <!-- Enable insecure code -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>POWERWRITER_AT_LOGGER_ENABLE;TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <DefineConstants>POWERWRITER_AT_LOGGER_ENABLE;TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="nanoFramework.Windows.Storage.Streams" Version="1.14.32" />
+    <PackageReference Include="System.Management" Version="6.0.0" />
+    <Reference Include="nanoFramework.System.Text">
+      <Aliases>nanoFrameworkSystemText</Aliases>
+    </Reference>
+  </ItemGroup>
+
+</Project>
