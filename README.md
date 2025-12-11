@@ -649,6 +649,7 @@ ATCmdLoadProject
 		uint8_t			m_password[PW_PROJECT_PWD_SIZE]		//Project password 
 		uint32_t		m_projectSize;						//Project Size
 		uint32_t		m_projectCRC32;						//Project crc32
+        char			m_name[PW_MAX_NAME_SIZE]			//Project name
 	}S_ATCmdLoadProject;
 ```
 
@@ -657,6 +658,8 @@ m_password: Project file password
 m_projectSize :  Project file size
 
 m_projectCRC32：CRC32 checksum of the project file
+
+m_name: PowerWriter Project name
 
 **Return Value**[ATCmdStatusOK](#ATCmdStatusOK)、[ATCmdStatusError](#ATCmdStatusError)。
 
