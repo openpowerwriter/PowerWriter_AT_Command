@@ -83,7 +83,11 @@ extern "C"
 	// Disable offline project
 	extern bool powerwriter_at_project_disable(S_ATChannel *ch);
 	// Load offline project
-	extern bool powerwriter_at_project_load(S_ATChannel *ch, const char *password, const void *prj_data, size_t prj_size, ATProgress p_cb);
+	// Note: 
+	// The Chinese file names in PW200/PW300 device should use GB2312 encoding (default),
+	// The Chinese file names for PWX1 device should use UTF-8 encoding,
+	// Using powerwriter_at_get_writerinfo to get device type.
+	extern bool powerwriter_at_project_load(S_ATChannel *ch, const char * prj_name, const char *password, const void *prj_data, size_t prj_size, ATProgress p_cb);
 	// start offline program
 	extern bool powerwriter_at_offline_start(S_ATChannel *ch);
 	// query offline status

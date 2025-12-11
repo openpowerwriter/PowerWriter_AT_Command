@@ -146,6 +146,8 @@ extern "C"
 		ATErrorBroadcastKeep,						// Need keep AT frame to send
 		ATErrorAtUartDisable,						// AT UART AT disabled
 		ATErrorFactoryTestFailed,				// AT factory test failed
+		ATErrorInitialFailed,							// ATcmd initial failed
+		ATErrorFWExceeded,							// Firmware quantity exceeds
 
 		_ATErrorMAX = PW_ENUM_MAX
 	} E_ATCmdError;

@@ -91,6 +91,7 @@ extern "C"
 		// Other command fields
 		ATCmdBroadcast = 400, // Broadcast data
 							  //...
+		ATCmdSleep = 500,								// Sleep
 
 		// State instruction
 		ATCmdStatusOK = (PW_ENUM_MAX - 100), // Status Ok
@@ -286,6 +287,7 @@ extern "C"
 		uint8_t m_password[PW_PROJECT_PWD_SIZE]; // Project password
 		uint32_t m_projectSize;					 // Project Size
 		uint32_t m_projectCRC32;				 // Project crc32
+		char	m_name[PW_MAX_FILE_NAME];		 // Project name
 	} S_ATCmdLoadProject;
 
 	// Load offline project to PowerWriter send

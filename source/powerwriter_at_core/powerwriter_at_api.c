@@ -778,6 +778,7 @@ bool _powerwriter_at_project_load_send(S_ATChannel *ch, uint8_t *data, uint32_t 
 
 bool powerwriter_at_project_load(
 	S_ATChannel *ch,
+	const char *prj_name,
 	const char *password,
 	const void *prj_data,
 	size_t prj_size,
@@ -793,6 +794,12 @@ bool powerwriter_at_project_load(
 		_cmdSetLastError(ch, ATErrorKey);
 		return false;
 	}
+	// name
+	memset(&ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_name, 0,
+		sizeof(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_name));
+	strncpy(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_name, prj_name,
+		MIN(sizeof(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_name) - 1, strlen(prj_name)));
+
 	// password
 	memset(&ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_password, PW_AT_DEFAULT_PASSWORD,
 		   sizeof(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_password));
