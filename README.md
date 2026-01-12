@@ -3,26 +3,35 @@ description: PowerWriter AT Command
 toc_max_heading_level: 6
 keywords: [powerwriter,PowerWriter AT,AT command,icworkshop,docs]
 ---
-# 4.3 PowerWriter Open API
+# 4.3 AT open source API
 
-> [!IMPORTANT]
+> [!CAUTION]
 >
 > **PWLINK2 (including Lite), PW400** Please note that the functions described on the current page are not supported.
+
+## 1.1 Overview {#base}
+
+AT Command Port, which supports control of input and output from both ends of the PowerWriter®, i.e., the USB port and the extended general-purpose RX/TX port for input and output commands.
+
+> [!NOTE]
 >
 > **PWX1** UART port AT is not supported.
 
-## 1.1 Overview 
+- USB-CDC: Users can send data to the PowerWriter® via USB-CDC, and can also control the behaviour of the PowerWriter® via AT commands supported by the PowerWriter® to read status or data. This mode is suitable for users who want to develop secondary desktop software to integrate the PowerWriter® to control the production process.
+- Hardware UART (output serial port): In addition to using USB -CDC to control the behaviour of the PowerWriter®, users can also integrate the PowerWriter® into a hardware control system to control the behaviour of the PowerWriter®, data uploads and downloads, which is suitable for the development mode away from the desktop system.
 
-AT Command Port, which supports control of input and output from both ends of the PowerWriter, i.e., the USB port and the extended general-purpose RX/TX port for input and output commands.
+```bash
+#github 
+git clone https://github.com/openpowerwriter/PowerWriter_AT_Command.git
+#gitee
+git clone https://gitee.com/openpowerwriter/PowerWriter_AT_Command.git
+```
 
-- USB-CDC: Users can send data to the PowerWriter via USB-CDC, and can also control the behaviour of the PowerWriter via AT commands supported by the PowerWriter to read status or data. This mode is suitable for users who want to develop secondary desktop software to integrate the PowerWriter to control the production process.
-- Hardware UART (output serial port): In addition to using USB -CDC to control the behavior of the PowerWriter, users can also integrate the PowerWriter into a hardware control system to control the behavior of the PowerWriter, data uploads and downloads, which is suitable for the development mode away from the desktop system.
+## 1.2 AT command enable{#enable}
 
-## 1.2 AT command enable
+To use the AT function, you need to enable AT mode on the device first, refer to. [Device Preferences](./../reference/powerwriter/menu/setting#device_preference)..
 
-To use the AT function, you need to enable AT mode on the device first, refer to [4.1.2.4 Setting (S) | PowerWriter Docs](https://docs.powerwriter.com/en/docs/next/powerwriter_for_arm/reference/powerwriter/menu/setting/)
-
-## 1.3 AT Command Structure
+## 1.3 AT Command Structure{#struct}
 
 The standard AT command starts with "AT" and ends with a carriage return CR (LF), and the response style returned is 
 
@@ -30,13 +39,13 @@ The standard AT command starts with "AT" and ends with a carriage return CR (LF)
 <\r\n><\r\n><body><\r\n><\r\n>
 ```
 
-which is a purely string-based terminal response mode. On PowerWriter, due to the need for some interfaces to send large amounts of data, as well as the need for data encryption and better real-time performance, and to reduce the communications bandwidth consumption, the overall trade-offs, PowerWriter open AT interface using a unified binary format in order to provide better performance, the command structure is shown below:
+which is a purely string-based terminal response mode. On PowerWriter®, due to the need for some interfaces to send large amounts of data, as well as the need for data encryption and better real-time performance, and to reduce the communications bandwidth consumption, the overall trade-offs, PowerWriter® open AT interface using a unified binary format in order to provide better performance, the command structure is shown below:
 
 | frame header |  length  |  data  | crc32 |
 | :----------: | :------: | :----: | :---: |
 |    "PWAT"    | uint32_t | object | crc32 |
 
-- frame header : Sync header signal for PowerWriter to fetch AT commands from the stream, four bytes, no '\0' endings.
+- frame header : Sync header signal for PowerWriter® to fetch AT commands from the stream, four bytes, no '\0' endings.
 - length: length of the command frame, including: frameheader, length, data, crc32.
 - data: object type, it is the command entity data, related to the corresponding command, please refer to AT command details and code.
 
@@ -66,19 +75,17 @@ which is a purely string-based terminal response mode. On PowerWriter, due to th
 
 > [!NOTE]
 >
-> - The interface data can be encrypted with AES128CBC encryption, and the communication password must be set manually on the PowerWriter.
+> - The interface data can be encrypted with AES128CBC encryption, and the communication password must be set manually on the PowerWriter®.
 > - Pure command line AT interface, please submit feedback.
 > - data nodes are forced to be byte-aligned by default when they are defined. The purpose of doing so is to remove differences in compiler features (structure padding) across platforms, which can result in some performance loss, and in order to make up for the possible performance loss (memory copying), an attempt is made to align attribute nodes to 4 bytes by default when they are defined (32-bit platforms), which makes no difference in practice, but cannot be relied upon as a default feature of the compiler. .
-> - The data node is not uniform in length, so if encryption is turned on, it will check if the total size of the object is aligned to 16 bytes, and if it is not, it will perform Zero padding at the end (some open source AES128CBC libraries come with other internal methods such as PKCS15, and not relying on the discretization feature is a good choice), so m_ cmdSize may actually be less than the length of the data node, up to 15 bytes.
+> - The data node is not uniform in length, so if encryption is turned on, it will check if the total size of the object is aligned to 16 bytes, and if it is not, it will perform Zero padding at the end (some open source AES128CBC libraries come with other internal methods such as PKCS15, and not relying on the discretisation feature is a good choice), so m_ cmdSize may actually be less than the length of the data node, up to 15 bytes.
 
+## 1.4 AT Command Classification{#cmd}
 
-
-## 1.4 AT Command Classification
-
-The current PowerWriter AT interface provides the following operational interfaces:
+The current PowerWriter® AT interface provides the following operational interfaces:
 
 ```c
- // PowerWriter AT command type
+ // PowerWriter® AT command type
     typedef enum E_ATcmdType
     {
         // Null command for reserved
@@ -115,16 +122,17 @@ The current PowerWriter AT interface provides the following operational interfac
         ATCmdResetTarget,	//Reset target 
 
         // Offline mode target chip operation
-        ATCmdGetProjectInfo = 200, // Get project info from PowerWriter
+        ATCmdGetProjectInfo = 200, // Get project info from PowerWriter®
         ATCmdRspProjectInfo,
 
-        ATCmdLoadProject,   // Load project to PowerWriter
-		ATCmdLoadProjectSend,	//Load project to PowerWriter send package
-        ATCmdDisableProject, // Delete project from PowerWriter (Mark as invalid)
+        ATCmdLoadProject,   // Load project to PowerWriter®
+		ATCmdLoadProjectSend,	//Load project to PowerWriter® send package
+        ATCmdDisableProject, // Delete project from PowerWriter® (Mark as invalid)
 
         ATCmdStartOffline,     // Start offline programming
         ATCmdGetOfflineStatus, // Get offline programming status
 
+		ATCmdSwitchOfflineProject, // Switch offline project
         // Benchmark instruction
         ATCmdFactoryRunSRAMFW = 300, // Load & run factory SRAM firmware
         ATCmdFactoryRunFlashFW,      // Load & run factory Flash firmware
@@ -143,11 +151,11 @@ The current PowerWriter AT interface provides the following operational interfac
     } E_ATcmdType;
 ```
 
-> [!NOTE]
+> [!TIP]
 >
-> PowerWriter will update and maintain the developed instructions, please refer to the repository source code for details.
+> PowerWriter® will update and maintain the developed instructions, please refer to the repository source code for details.
 
-### 1.4.1 Query and configuration
+### 1.4.1 Query and configuration{#query_config}
 
 #### 1.4.1.1 Query information{#ATCmdGetWriterInfo}
 
@@ -169,8 +177,6 @@ m_placeholder：placeholder
 >
 > A part of commands only have command type, no parameters, are expressed as S_ATCmdObject, and will not repeat the description.
 
-
-
 The **Command returns **:[ATCmdRspWriterInfo](#ATCmdRspWriterInfo)
 
 #### 1.4.1.2 Return information{#ATCmdRspWriterInfo}
@@ -184,24 +190,24 @@ ATCmdRspWriterInfo：
 ```c
 typedef struct S_ATCmdRspWriterInfo
 {
-    uint8_t m_oem[PW_OEM_LENGTH]; // PowerWriter oem, such as PW200,PW300,PWLINK etc...
-    uint8_t m_sn[PW_SN_LENGTH];   // PowerWriter sn, formated as "xxxxxxxxxxxx..."
+    uint8_t m_oem[PW_OEM_LENGTH]; // PowerWriter® oem, such as PW200,PW300,PWLINK etc...
+    uint8_t m_sn[PW_SN_LENGTH];   // PowerWriter® sn, formated as "xxxxxxxxxxxx..."
 
-    uint8_t m_hardwareVersion[PW_VERSION_LENGTH];   // PowerWriter hardware version, formated as "x.xx.xx"
-    uint8_t m_bootloaderVersion[PW_VERSION_LENGTH]; // PowerWriter bootloader version, formated as "x.xx.xx"
-    uint8_t m_interfaceVersion[PW_VERSION_LENGTH];  // PowerWriter interface version, formated as "x.xx.xx"
+    uint8_t m_hardwareVersion[PW_VERSION_LENGTH];   // PowerWriter® hardware version, formated as "x.xx.xx"
+    uint8_t m_bootloaderVersion[PW_VERSION_LENGTH]; // PowerWriter® bootloader version, formated as "x.xx.xx"
+    uint8_t m_interfaceVersion[PW_VERSION_LENGTH];  // PowerWriter® interface version, formated as "x.xx.xx"
 } S_ATCmdRspWriterInfo;
 ```
 
-**m_oem**：PowerWriter OEM models.
+**m_oem**：PowerWriter® OEM models.
 
-**m_sn**：PowerWriter serial number.
+**m_sn**：PowerWriter® serial number.
 
-**m_hardwareVersion**: PowerWriter hardware version.
+**m_hardwareVersion**: PowerWriter® hardware version.
 
-**m_bootloaderVersion**: PowerWriter bootloader version.
+**m_bootloaderVersion**: PowerWriter® bootloader version.
 
-**m_interfaceVersion**: PowerWriter interface firmware version.
+**m_interfaceVersion**: PowerWriter® interface firmware version.
 
 #### 1.4.1.3 Querying Configuration{#ATCmdGetWriterCfg}
 
@@ -282,12 +288,10 @@ ATCmdSetWriterCfg
 
 [ATCmdStatusOK](#ATCmdStatusOK)、[ATCmdStatusError](#ATCmdStatusError)。
 
-:::tip 
-
-- For security reasons, some PowerWriter configurations are not allowed to be changed (modification is invalid), such as: **m_targetName, m_limitOfNumberEnable, m_limitOfNumber**.
-- Programmer configuration information, by default PowerWrietr loads the offline project information at startup, if no offline project is preloaded, the default value is returned.
-
-:::
+> [!TIP]
+>
+> - For security reasons, some PowerWriter® configurations are not allowed to be changed (modification is invalid), such as: **m_targetName, m_limitOfNumberEnable, m_limitOfNumber**.
+> - Programmer configuration information, by default PowerWrietr® loads the offline project information at startup, if no offline project is preloaded, the default value is returned.
 
 #### 1.4.1.4 Setting the AT BaudRate{#ATCmdSetBaudrate}
 
@@ -311,20 +315,16 @@ m_baudrate: set new baud rate
 
 [ATCmdStatusOK](#ATCmdStatusOK)、[ATCmdStatusError](#ATCmdStatusError)。
 
-:::caution 
-
-- The USB port does not need to change the baud rate, it is a CDC interface and supports all baud rates, which are set automatically, and the UART port AT is a hardware UART port with a default baud rate of 9600.
-- After receiving the command, the PowerWriter returns the response according to the baud rate before the setting, if the setting is successful, the PowerWriter will automatically enter the new baud rate communication, if it fails, it still keeps the old baud rate setting.
-
-:::
+> [!CAUTION]
+>
+> - The USB port does not need to change the baud rate, it is a CDC interface and supports all baud rates, which are set automatically, and the UART port AT is a hardware UART port with a default baud rate of 9600.
+> - After receiving the command, the PowerWriter® returns the response according to the baud rate before the setting, if the setting is successful, the PowerWriter® will automatically enter the new baud rate communication, if it fails, it still keeps the old baud rate setting.
 
 ### 1.4.2 Online operating {#OnlineAPI}
 
-:::tip 
-
-For online operation commands, you need to load the offline project first and perform data presetting before it is supported.
-
-:::
+> [!NOTE]
+>
+> For online operation commands, you need to load the offline project first and perform data presetting before it is supported.
 
 #### 1.4.2.1 Connecting target chip{#ATCmdConnectTarget}
 
@@ -376,11 +376,9 @@ m_CIDSize: Current chip ID length
 
 m_CIDData: The ID Data Buffer of the current chip, the reserved buffer length is PW_TARGET_ID_MAX(16).
 
-:::tip 
-
-Some chips have non-contiguous IDs, PowerWriter will give the non-contiguous chips in a continuous mode to remove redundant information.
-
-:::
+> [!TIP]
+>
+> Some chips have non-contiguous IDs, PowerWriter® will give the non-contiguous chips in a continuous mode to remove redundant information.
 
 #### 1.4.2.5 Read target chip data{#ATCmdReadTargetMemory}
 
@@ -399,11 +397,9 @@ m_address: address for reading data, support SRAM, peripheral register value (so
 
 m_size: the size of the read data.
 
-:::tip 
-
-The size of a single read should not exceed PW_BUFFER_MAX(256), otherwise PowerWriter will only return the length of PW_BUFFER_MAX. PowerWriter does not provide a continuous read command yet, although the continuous can improve the read/write efficiency, but it needs a large storage space to receive the data, which is not friendly to the AT interface of UART. This is not friendly to the AT interface on the UART side. If you have any special needs, please give us feedback, and there is no interface for mem8, mem16, mem32.
-
-:::
+> [!NOTE]
+>
+> The size of a single read should not exceed PW_BUFFER_MAX(256), otherwise PowerWriter® will only return the length of PW_BUFFER_MAX. PowerWriter® does not provide a continuous read command yet, although the continuous can improve the read/write efficiency, but it needs a large storage space to receive the data, which is not friendly to the AT interface of UART. This is not friendly to the AT interface on the UART side. If you have any special needs, please give us feedback, and there is no interface for mem8, mem16, mem32.
 
 **Return Value**：Refer to [ATCmdRspTargetMemory](#ATCmdRspTargetMemory)、[ATCmdStatusError](#ATCmdStatusError).
 
@@ -438,11 +434,9 @@ ATCmdEraseTarget
 
 **Return Value**[ATCmdStatusOK](#ATCmdStatusOK)、[ATCmdStatusError](#ATCmdStatusError)。
 
-:::tip 
-
-The time to erase the target chip is uncertain, and you need to reserve enough waiting time when executing this command.
-
-:::
+> [!NOTE]
+>
+> The time to erase the target chip is uncertain, and you need to reserve enough waiting time when executing this command.
 
 #### 1.4.2.8 Erase Sector{#ATCmdEraseTargetSectors}
 
@@ -465,13 +459,11 @@ m_size：Erase Length
 
 **Return Value**[ATCmdStatusOK](#ATCmdStatusOK)、[ATCmdStatusError](#ATCmdStatusError)。
 
-:::caution
-
-Erasing addresses aligned to the sector start address, erasing an integer number of sectors is the optimal solution, if the start or end address is not aligned, **more sectors will be erased at the start address (rounded down) and one more sector at the end (rounded up). **
-
-The time to erase the target chip is uncertain, and you need to reserve enough waiting time when executing this command.
-
-:::
+> [!CAUTION]
+>
+> Erasing addresses aligned to the sector start address, erasing an integer number of sectors is the optimal solution, if the start or end address is not aligned, **more sectors will be erased at the start address (rounded down) and one more sector at the end (rounded up). **
+>
+> The time to erase the target chip is uncertain, and you need to reserve enough waiting time when executing this command.
 
 #### 1.4.2.9 Write data{#ATCmdWriteTargetMemory}
 
@@ -498,11 +490,9 @@ m_buffer：Data buffer (Note: buffer is fixed length)
 
 **Return Value**[ATCmdStatusOK](#ATCmdStatusOK)、[ATCmdStatusError](#ATCmdStatusError)。
 
-:::tip 
-
-Write data support write to SRAM, write to Flash, EEPROM, OTP, etc., other area write is not fully tested.
-
-:::
+> [!NOTE]
+>
+> Write data support write to SRAM, write to Flash, EEPROM, OTP, etc., other area write is not fully tested.
 
 #### 1.4.2.10 Read option byte{#ATCmdReadTargetOptionByte}
 
@@ -540,11 +530,9 @@ ATCmdWriteTargetVendorOptionByte
 
 **Return Value**[ATCmdStatusOK](#ATCmdStatusOK)、[ATCmdStatusError](#ATCmdStatusError)。
 
-:::caution 
-
-Write option words with data from an offline project (pkg), be sure to preload them first!
-
-:::
+> [!CAUTION]
+>
+> Write option words with data from an offline project (pkg), be sure to preload them first!
 
 #### 1.4.2.13 Write user option byte{#ATCmdWriteTargetUserOptionByte}
 
@@ -554,11 +542,9 @@ ATCmdWriteTargetUserOptionByte
 
 **Return Value**[ATCmdStatusOK](#ATCmdStatusOK)、[ATCmdStatusError](#ATCmdStatusError)。
 
-:::caution 
-
-Write option words with data from an offline project (pkg), be sure to preload them first!
-
-:::
+> [!CAUTION]
+>
+> Write option words with data from an offline project (pkg), be sure to preload them first!
 
 #### 1.4.2.14 Reset target chip {#ATCmdTargetReset}
 
@@ -597,11 +583,9 @@ resetType: reset target chip operation type.
 
 [ATCmdStatusOK](#ATCmdStatusOK)、[ATCmdStatusError](#ATCmdStatusError)。
 
-:::caution 
-
-- After reset, the chip will be offline, if you need to perform online operation again, you need to reconnect the chip, see Connecting Chip Operation Instruction.
-
-:::
+> [!CAUTION]
+>
+> After reset, the chip will be offline, if you need to perform online operation again, you need to reconnect the chip, see Connecting Chip Operation Instruction.
 
 ### 1.4.3 Offline Operation Command{#Offline}
 
@@ -649,7 +633,8 @@ ATCmdLoadProject
 		uint8_t			m_password[PW_PROJECT_PWD_SIZE]		//Project password 
 		uint32_t		m_projectSize;						//Project Size
 		uint32_t		m_projectCRC32;						//Project crc32
-        char			m_name[PW_MAX_NAME_SIZE]			//Project name
+        
+        char		m_projectName[PW_MAX_NAME_SIZE]		//Project name
 	}S_ATCmdLoadProject;
 ```
 
@@ -659,16 +644,14 @@ m_projectSize :  Project file size
 
 m_projectCRC32：CRC32 checksum of the project file
 
-m_name: PowerWriter Project name
+m_projectName：PowerWriter Project name
 
 **Return Value**[ATCmdStatusOK](#ATCmdStatusOK)、[ATCmdStatusError](#ATCmdStatusError)。
 
-:::danger 
-
-- The maximum length of the project file password is 16 characters, if **password is shorter than 16 bytes, please fill the remaining part with 0x00 **.
-- The transmission of project file passwords is sensitive data, so users with security needs should enable the AT communication encryption function (**Encryption algorithm is AES128 CBC**).
-
-:::
+> [!CAUTION]
+>
+> - The maximum length of the project file password is 16 characters, if **password is shorter than 16 bytes, please fill the remaining part with 0x00 **.
+> - The transmission of project file passwords is sensitive data, so users with security needs should enable the AT communication encryption function (**Encryption algorithm is AES128 CBC**).
 
 #### 1.4.3.4 Load offline project send{#ATCmdLoadProjectSend}
 
@@ -717,6 +700,42 @@ ATCmdGetOfflineStatus
 **Invoke Parameter**：S_ATCmdGetOfflineStatus
 
 **Return Value**[ATCmdStatusOK](#ATCmdStatusOK)、[ATCmdStatusError](#ATCmdStatusError)、[ATCmdStatusProgress](#ATCmdStatusProgress)。
+
+#### 1.4.3.8 Switch offline project{#ATCmdSwitchOfflineProject}
+
+ATCmdSwitchOfflineProject
+
+**Invoke Parameter**：S_ATCmdSwitchOfflineProject
+
+```c
+	// Mode when switching projects
+	typedef enum S_SwitchPrjReloadType
+	{
+		SWITCH_PROJECT_TYPE_RESUME = 0, /* Resume previous project progress */
+		SWITCH_PROJECT_TYPE_RELOAD,		/* Reload project */
+
+		SWITCH_PROJECT_TYPE_MAX = PW_ENUM_MAX
+	} S_SwitchPrjReloadType;
+
+	typedef struct S_ATCmdSwitchOfflineProject
+	{
+		S_SwitchPrjReloadType m_reloadType;		 // Reload type
+		uint8_t m_password[PW_PROJECT_PWD_SIZE]; // Project password
+		char m_name[PW_MAX_FILE_NAME];			 // Project name
+	} S_ATCmdSwitchOfflineProject;
+```
+
+m_reloadType:  Switch project mode, restore previous state or restart
+
+m_password：Project file password. When loading a project that has already been burned, the password is optional.
+
+m_name：The name or path of the project file
+
+**Return：**[ATCmdStatusOK](#ATCmdStatusOK)、[ATCmdStatusError](#ATCmdStatusError)。
+
+> [!NOTE]
+>
+> This command is only supported on PWX1 devices.
 
 ### 1.4.4 Benchmark{#factory}
 
@@ -771,11 +790,9 @@ m_data：data buffer
 
 **Return Value**[ATCmdStatusOK](#ATCmdStatusOK)、[ATCmdStatusError](#ATCmdStatusError)。
 
-:::info 
-
-- Why a transport path is specified: Some products have only two ports, USB and UART, while others have multiple forwarding ports for compatibility reasons.
-
-:::
+> [!NOTE]
+>
+> Why a transport path is specified: Some products have only two ports, USB and UART, while others have multiple forwarding ports for compatibility reasons.
 
 ### 1.4.6 Debug command{#debug}
 

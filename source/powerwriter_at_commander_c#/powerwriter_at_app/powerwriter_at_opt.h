@@ -93,6 +93,8 @@ public:
 	bool PwAtOffLineStart();
 	/* query offline status */
 	bool PwAtOffLineStatus( S_ATCmdStatus* ps);
+	/* switch offline project */
+	bool PwAtProjectSwitch(S_SwitchPrjReloadType reload_type, const char* prj_name, const char* password);
 
 	/* easy broadcast no rsp */
 	bool PwAtEasyBroadcastNoRsp( const void* bcdata, size_t bcsize, S_ATCmdBroadcastDir bcdir);

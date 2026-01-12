@@ -197,6 +197,9 @@ namespace powerwriter_at_sample
         //    PW_At_Log.powerwriter_at_log(PW_At_Log.E_AT_LOG_TYPE.LOGD, "Progress: {0} / {1}", ps.m_progress.m_total, ps.m_progress.m_processed);
         //}
 
+        // Switch offline project
+        //PwAtProjectSwitch(powerwriter_at_type.S_SwitchPrjReloadType.SWITCH_PROJECT_TYPE_RELOAD, "pkg/2025-01/N32F031_FactoryTest.pkg", "");
+
         // Broadcast
         //string broadText = "Hello powerwriter AT\r\n";
         //byte[] broadData = System.Text.Encoding.UTF8.GetBytes(broadText);

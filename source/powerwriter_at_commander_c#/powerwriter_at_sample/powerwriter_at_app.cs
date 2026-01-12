@@ -141,6 +141,11 @@ namespace powerwriter_at_app
         [return: MarshalAs(UnmanagedType.I1)]
         public unsafe static extern bool PwAtOffLineStatus(ref S_ATCmdStatus ps);
 
+        // switch offline project
+        [DllImport(libraryName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public unsafe static extern bool PwAtProjectSwitch(S_SwitchPrjReloadType reload_type, [MarshalAs(UnmanagedType.LPStr)] string prj_name, [MarshalAs(UnmanagedType.LPStr)] string password);
+
         // easy broadcast no rsp
         [DllImport(libraryName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.I1)]

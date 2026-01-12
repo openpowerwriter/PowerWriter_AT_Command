@@ -56,6 +56,8 @@ PW_AT_APP_EXPORT bool PwAtProjectLoad(const char *prj_name, const char* password
 PW_AT_APP_EXPORT bool PwAtOffLineStart();
 /* query offline status */
 PW_AT_APP_EXPORT bool PwAtOffLineStatus(S_ATCmdStatus* ps);
+/* switch offline project */
+PW_AT_APP_EXPORT bool PwAtProjectSwitch(S_SwitchPrjReloadType reload_type, const char* prj_name, const char* password);
 
 /* easy broadcast no rsp */
 PW_AT_APP_EXPORT bool PwAtEasyBroadcastNoRsp(const void* bcdata, size_t bcsize, S_ATCmdBroadcastDir bcdir);

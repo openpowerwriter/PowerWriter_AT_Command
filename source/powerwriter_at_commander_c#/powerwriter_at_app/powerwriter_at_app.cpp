@@ -188,6 +188,12 @@ bool PwAtOffLineStatus(S_ATCmdStatus* ps) {
 	return g_pPwAtOpt->PwAtOffLineStatus(ps);
 }
 
+bool PwAtProjectSwitch(S_SwitchPrjReloadType reload_type, const char* prj_name, const char* password) {
+	if (g_pPwAtOpt == NULL)
+		return false;
+	return g_pPwAtOpt->PwAtProjectSwitch(reload_type, prj_name, password);
+}
+
 bool PwAtEasyBroadcastNoRsp(const void* bcdata, size_t bcsize, S_ATCmdBroadcastDir bcdir) {
 	if (g_pPwAtOpt == NULL)
 		return false;

@@ -222,6 +222,7 @@ namespace powerwriter_at_type
         //}
     };
 
+    // Reset Target type
     public enum E_resetType
     {
         HWKeepLow,              //Hardware Keeplow
@@ -235,6 +236,15 @@ namespace powerwriter_at_type
 
         _TARGET_RESET_ = PW_At_Constants.PW_ENUM_MAX
     };
+
+    // Mode when switching projects
+	public enum S_SwitchPrjReloadType
+	{
+		SWITCH_PROJECT_TYPE_RESUME = 0, /* Resume previous project progress */
+		SWITCH_PROJECT_TYPE_RELOAD,		/* Reload project */
+
+		SWITCH_PROJECT_TYPE_MAX = PW_ENUM_MAX
+	};
 
     // Response offline project information
     [StructLayout(LayoutKind.Sequential, Pack = 1)]

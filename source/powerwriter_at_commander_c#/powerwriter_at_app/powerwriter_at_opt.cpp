@@ -256,6 +256,10 @@ bool PowerWriter_At_Opt::PwAtOffLineStatus(S_ATCmdStatus* ps) {
 	return powerwriter_at_offline_status(&this->m_atCmdChannel, ps);
 }
 
+bool PowerWriter_At_Opt::PwAtProjectSwitch(S_SwitchPrjReloadType reload_type, const char* prj_name, const char* password) {
+	return powerwriter_at_project_switch(&this->m_atCmdChannel, reload_type, prj_name, password);
+}
+
 bool PowerWriter_At_Opt::PwAtEasyBroadcastNoRsp(const void* bcdata, size_t bcsize, S_ATCmdBroadcastDir bcdir) {
 	return powerwriter_at_easy_broadcast_no_rsp(&this->m_atCmdChannel, bcdata, bcsize, bcdir);
 }

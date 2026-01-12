@@ -83,6 +83,8 @@ PW_AT_API_EXPORT bool powerwriter_at_project_load(S_ATChannel *ch, const char *p
 PW_AT_API_EXPORT bool powerwriter_at_offline_start(S_ATChannel *ch);
 // query offline status
 PW_AT_API_EXPORT bool powerwriter_at_offline_status(S_ATChannel *ch, S_ATCmdStatus *ps);
+// switch offline project
+PW_AT_API_EXPORT bool powerwriter_at_project_switch(S_ATChannel *ch, S_SwitchPrjReloadType reload_type, const char * prj_name, const char *password);
 
 // easy broadcast no rsp
 PW_AT_API_EXPORT bool powerwriter_at_easy_broadcast_no_rsp(S_ATChannel *ch, const void *bcdata, size_t bcsize, S_ATCmdBroadcastDir bcdir);
