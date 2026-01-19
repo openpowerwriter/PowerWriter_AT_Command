@@ -92,6 +92,12 @@ extern "C"
 	extern bool powerwriter_at_offline_start(S_ATChannel *ch);
 	// query offline status
 	extern bool powerwriter_at_offline_status(S_ATChannel *ch, S_ATCmdStatus *ps);
+	// switch offline project
+	// Note: 
+	// The Chinese file names in PW200/PW300 device should use GB2312 encoding (default),
+	// The Chinese file names for PWX1 device should use UTF-8 encoding,
+	// Using powerwriter_at_get_writerinfo to get device type.
+	extern bool powerwriter_at_project_switch(S_ATChannel *ch,S_SwitchPrjReloadType reload_type, const char * prj_name, const char *password);
 
 	// easy broadcast no rsp
 	extern bool powerwriter_at_easy_broadcast_no_rsp(S_ATChannel *ch, const void *bcdata, size_t bcsize, S_ATCmdBroadcastDir bcdir);

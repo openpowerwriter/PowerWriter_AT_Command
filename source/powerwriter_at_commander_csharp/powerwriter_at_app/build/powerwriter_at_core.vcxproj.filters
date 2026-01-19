@@ -1,0 +1,132 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_api.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_cert.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_utils.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_porting.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_samples.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\aes\aes.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\crc\crc32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_app.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_opt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\SerialPort.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\SerialPortBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\SerialPortInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\SerialPortInfoBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\SerialPortInfoWinBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\SerialPortWinBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_global.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_api.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_error.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_cert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_porting.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_log.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_type.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\aes\aes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\crc\crc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_app.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\powerwriter_at_opt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\NLock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\osplatformutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\SerialPort.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\SerialPort_global.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\SerialPortBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\SerialPortInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\SerialPortInfoBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\SerialPortInfoWinBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\SerialPortWinBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\3rd\CSerialPort\sigslot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{168F9932-E03D-300F-81AD-818D8258C035}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{8803AD88-F7FD-3A24-B9DE-13BF8E13628C}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -243,7 +243,7 @@ namespace powerwriter_at_type
 		SWITCH_PROJECT_TYPE_RESUME = 0, /* Resume previous project progress */
 		SWITCH_PROJECT_TYPE_RELOAD,		/* Reload project */
 
-		SWITCH_PROJECT_TYPE_MAX = PW_ENUM_MAX
+		SWITCH_PROJECT_TYPE_MAX = PW_At_Constants.PW_ENUM_MAX
 	};
 
     // Response offline project information

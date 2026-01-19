@@ -1,0 +1,249 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.26/Modules/CMakeDetermineSystem.cmake:204 (message)"
+      - "CMakeLists.txt:12 (project)"
+    message: |
+      The system is: Windows - 10.0.22000 - AMD64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.26/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.26/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-3.26/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:12 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler:  
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      用于 .NET Framework 的 Microsoft (R) 生成引擎版本 15.9.30+gc0e4b0e683
+      版权所有(C) Microsoft Corporation。保留所有权利。
+      
+      生成启动时间为 2026/1/19 15:58:48。
+      节点 1 上的项目“E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\3.26.3\\CompilerIdC\\CompilerIdC.vcxproj”(默认目标)。
+      PrepareForBuild:
+        正在创建目录“Debug\\”。
+        正在创建目录“Debug\\CompilerIdC.tlog\\”。
+      InitializeBuildStatus:
+        正在创建“Debug\\CompilerIdC.tlog\\unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+      VcpkgTripletSelection:
+        Using triplet "x86-windows" from "E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\"
+        Using normalized configuration "Debug"
+      ClCompile:
+        C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.16.27023\\bin\\HostX86\\x86\\CL.exe /c /I"E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\include" /nologo /W0 /WX- /diagnostics:classic /Od /Oy- /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc141.pdb" /Gd /TC /analyze- /FC /errorReport:queue CMakeCCompilerId.c
+        CMakeCCompilerId.c
+      Link:
+        C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.16.27023\\bin\\HostX86\\x86\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdC.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:"E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\lib" /LIBPATH:"E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib "E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdC.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdC.lib" /MACHINE:X86 /SAFESEH Debug\\CMakeCCompilerId.obj
+        CompilerIdC.vcxproj -> E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\3.26.3\\CompilerIdC\\.\\CompilerIdC.exe
+      AppLocalFromInstalled:
+        pwsh.exe -ExecutionPolicy Bypass -noprofile -File "E:\\Opensource\\vcpkg_new\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\3.26.3\\CompilerIdC\\.\\CompilerIdC.exe" "E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\bin" "Debug\\CompilerIdC.tlog\\CompilerIdC.write.1u.tlog" "Debug\\vcpkg.applocal.log"
+      PostBuildEvent:
+        for %%i in (cl.exe) do @echo CMAKE_C_COMPILER=%%~$PATH:i
+        :VCEnd
+        CMAKE_C_COMPILER=C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.16.27023\\bin\\Hostx86\\x86\\cl.exe
+      FinalizeBuildStatus:
+        正在删除文件“Debug\\CompilerIdC.tlog\\unsuccessfulbuild”。
+        正在对“Debug\\CompilerIdC.tlog\\CompilerIdC.lastbuildstate”执行 Touch 任务。
+      已完成生成项目“E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\3.26.3\\CompilerIdC\\CompilerIdC.vcxproj”(默认目标)的操作。
+      
+      已成功生成。
+          0 个警告
+          0 个错误
+      
+      已用时间 00:00:01.81
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.vcxproj"
+      
+      The C compiler identification is MSVC, found in:
+        E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/build/CMakeFiles/3.26.3/CompilerIdC/CompilerIdC.exe
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.26/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.26/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-3.26/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:12 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler:  
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      用于 .NET Framework 的 Microsoft (R) 生成引擎版本 15.9.30+gc0e4b0e683
+      版权所有(C) Microsoft Corporation。保留所有权利。
+      
+      生成启动时间为 2026/1/19 15:58:50。
+      节点 1 上的项目“E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\3.26.3\\CompilerIdCXX\\CompilerIdCXX.vcxproj”(默认目标)。
+      PrepareForBuild:
+        正在创建目录“Debug\\”。
+        正在创建目录“Debug\\CompilerIdCXX.tlog\\”。
+      InitializeBuildStatus:
+        正在创建“Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+      VcpkgTripletSelection:
+        Using triplet "x86-windows" from "E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\"
+        Using normalized configuration "Debug"
+      ClCompile:
+        C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.16.27023\\bin\\HostX86\\x86\\CL.exe /c /I"E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\include" /nologo /W0 /WX- /diagnostics:classic /Od /Oy- /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc141.pdb" /Gd /TP /analyze- /FC /errorReport:queue CMakeCXXCompilerId.cpp
+        CMakeCXXCompilerId.cpp
+      Link:
+        C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.16.27023\\bin\\HostX86\\x86\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdCXX.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:"E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\lib" /LIBPATH:"E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib "E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdCXX.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdCXX.lib" /MACHINE:X86 /SAFESEH Debug\\CMakeCXXCompilerId.obj
+        CompilerIdCXX.vcxproj -> E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\3.26.3\\CompilerIdCXX\\.\\CompilerIdCXX.exe
+      AppLocalFromInstalled:
+        pwsh.exe -ExecutionPolicy Bypass -noprofile -File "E:\\Opensource\\vcpkg_new\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\3.26.3\\CompilerIdCXX\\.\\CompilerIdCXX.exe" "E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\bin" "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.write.1u.tlog" "Debug\\vcpkg.applocal.log"
+      PostBuildEvent:
+        for %%i in (cl.exe) do @echo CMAKE_CXX_COMPILER=%%~$PATH:i
+        :VCEnd
+        CMAKE_CXX_COMPILER=C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.16.27023\\bin\\Hostx86\\x86\\cl.exe
+      FinalizeBuildStatus:
+        正在删除文件“Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild”。
+        正在对“Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.lastbuildstate”执行 Touch 任务。
+      已完成生成项目“E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\3.26.3\\CompilerIdCXX\\CompilerIdCXX.vcxproj”(默认目标)的操作。
+      
+      已成功生成。
+          0 个警告
+          0 个错误
+      
+      已用时间 00:00:01.62
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.vcxproj"
+      
+      The CXX compiler identification is MSVC, found in:
+        E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/build/CMakeFiles/3.26.3/CompilerIdCXX/CompilerIdCXX.exe
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.26/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.26/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:12 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/build/CMakeFiles/CMakeScratch/TryCompile-2vmt7a"
+      binary: "E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/build/CMakeFiles/CMakeScratch/TryCompile-2vmt7a"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:X86"
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/build/CMakeFiles/CMakeScratch/TryCompile-2vmt7a
+        
+        Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/MSBuild/15.0/Bin/MSBuild.exe cmTC_81b3a.vcxproj /p:Configuration=Debug /p:Platform=Win32 /p:VisualStudioVersion=15.0 /v:n && 用于 .NET Framework 的 Microsoft (R) 生成引擎版本 15.9.30+gc0e4b0e683
+        版权所有(C) Microsoft Corporation。保留所有权利。
+        
+        生成启动时间为 2026/1/19 15:58:52。
+        节点 1 上的项目“E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\CMakeScratch\\TryCompile-2vmt7a\\cmTC_81b3a.vcxproj”(默认目标)。
+        PrepareForBuild:
+          正在创建目录“cmTC_81b3a.dir\\Debug\\”。
+          正在创建目录“E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\CMakeScratch\\TryCompile-2vmt7a\\Debug\\”。
+          正在创建目录“cmTC_81b3a.dir\\Debug\\cmTC_81b3a.tlog\\”。
+        InitializeBuildStatus:
+          正在创建“cmTC_81b3a.dir\\Debug\\cmTC_81b3a.tlog\\unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+        VcpkgTripletSelection:
+          Using triplet "x86-windows" from "E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\"
+          Using normalized configuration "Debug"
+        ClCompile:
+          C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.16.27023\\bin\\HostX86\\x86\\CL.exe /c /I"C:\\Program Files (x86)\\Visual Leak Detector\\include" /I"E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\include" /Zi /W1 /WX- /diagnostics:classic /Od /Ob0 /Oy- /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_81b3a.dir\\Debug\\\\" /Fd"cmTC_81b3a.dir\\Debug\\vc141.pdb" /Gd /TC /analyze- /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.26\\Modules\\CMakeCCompilerABI.c"
+          用于 x86 的 Microsoft (R) C/C++ 优化编译器 19.16.27054 版
+          版权所有(C) Microsoft Corporation。保留所有权利。
+          
+          CMakeCCompilerABI.c
+          cl /c /I"C:\\Program Files (x86)\\Visual Leak Detector\\include" /I"E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\include" /Zi /W1 /WX- /diagnostics:classic /Od /Ob0 /Oy- /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_81b3a.dir\\Debug\\\\" /Fd"cmTC_81b3a.dir\\Debug\\vc141.pdb" /Gd /TC /analyze- /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.26\\Modules\\CMakeCCompilerABI.c"
+          
+        Link:
+          C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.16.27023\\bin\\HostX86\\x86\\link.exe /ERRORREPORT:QUEUE /OUT:"E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\CMakeScratch\\TryCompile-2vmt7a\\Debug\\cmTC_81b3a.exe" /INCREMENTAL /NOLOGO /LIBPATH:"C:\\Program Files (x86)\\Visual Leak Detector\\lib\\Win32" /LIBPATH:"E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\lib" /LIBPATH:"E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/build/CMakeFiles/CMakeScratch/TryCompile-2vmt7a/Debug/cmTC_81b3a.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/build/CMakeFiles/CMakeScratch/TryCompile-2vmt7a/Debug/cmTC_81b3a.lib" /MACHINE:X86 /SAFESEH  /machine:X86 cmTC_81b3a.dir\\Debug\\CMakeCCompilerABI.obj
+          cmTC_81b3a.vcxproj -> E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\CMakeScratch\\TryCompile-2vmt7a\\Debug\\cmTC_81b3a.exe
+        AppLocalFromInstalled:
+          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "E:\\Opensource\\vcpkg_new\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\CMakeScratch\\TryCompile-2vmt7a\\Debug\\cmTC_81b3a.exe" "E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\bin" "cmTC_81b3a.dir\\Debug\\cmTC_81b3a.tlog\\cmTC_81b3a.write.1u.tlog" "cmTC_81b3a.dir\\Debug\\vcpkg.applocal.log"
+        FinalizeBuildStatus:
+          正在删除文件“cmTC_81b3a.dir\\Debug\\cmTC_81b3a.tlog\\unsuccessfulbuild”。
+          正在对“cmTC_81b3a.dir\\Debug\\cmTC_81b3a.tlog\\cmTC_81b3a.lastbuildstate”执行 Touch 任务。
+        已完成生成项目“E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\CMakeScratch\\TryCompile-2vmt7a\\cmTC_81b3a.vcxproj”(默认目标)的操作。
+        
+        已成功生成。
+            0 个警告
+            0 个错误
+        
+        已用时间 00:00:01.73
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.26/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.26/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:12 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/build/CMakeFiles/CMakeScratch/TryCompile-ist728"
+      binary: "E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/build/CMakeFiles/CMakeScratch/TryCompile-ist728"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:X86"
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/build/CMakeFiles/CMakeScratch/TryCompile-ist728
+        
+        Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/MSBuild/15.0/Bin/MSBuild.exe cmTC_051ef.vcxproj /p:Configuration=Debug /p:Platform=Win32 /p:VisualStudioVersion=15.0 /v:n && 用于 .NET Framework 的 Microsoft (R) 生成引擎版本 15.9.30+gc0e4b0e683
+        版权所有(C) Microsoft Corporation。保留所有权利。
+        
+        生成启动时间为 2026/1/19 15:58:54。
+        节点 1 上的项目“E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ist728\\cmTC_051ef.vcxproj”(默认目标)。
+        PrepareForBuild:
+          正在创建目录“cmTC_051ef.dir\\Debug\\”。
+          正在创建目录“E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ist728\\Debug\\”。
+          正在创建目录“cmTC_051ef.dir\\Debug\\cmTC_051ef.tlog\\”。
+        InitializeBuildStatus:
+          正在创建“cmTC_051ef.dir\\Debug\\cmTC_051ef.tlog\\unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+        VcpkgTripletSelection:
+          Using triplet "x86-windows" from "E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\"
+          Using normalized configuration "Debug"
+        ClCompile:
+          C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.16.27023\\bin\\HostX86\\x86\\CL.exe /c /I"C:\\Program Files (x86)\\Visual Leak Detector\\include" /I"E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\include" /Zi /W1 /WX- /diagnostics:classic /Od /Ob0 /Oy- /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_051ef.dir\\Debug\\\\" /Fd"cmTC_051ef.dir\\Debug\\vc141.pdb" /Gd /TP /analyze- /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.26\\Modules\\CMakeCXXCompilerABI.cpp"
+          用于 x86 的 Microsoft (R) C/C++ 优化编译器 19.16.27054 版
+          版权所有(C) Microsoft Corporation。保留所有权利。
+          
+          cl /c /I"C:\\Program Files (x86)\\Visual Leak Detector\\include" /I"E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\include" /Zi /W1 /WX- /diagnostics:classic /Od /Ob0 /Oy- /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_051ef.dir\\Debug\\\\" /Fd"cmTC_051ef.dir\\Debug\\vc141.pdb" /Gd /TP /analyze- /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.26\\Modules\\CMakeCXXCompilerABI.cpp"
+          CMakeCXXCompilerABI.cpp
+          
+        Link:
+          C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.16.27023\\bin\\HostX86\\x86\\link.exe /ERRORREPORT:QUEUE /OUT:"E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ist728\\Debug\\cmTC_051ef.exe" /INCREMENTAL /NOLOGO /LIBPATH:"C:\\Program Files (x86)\\Visual Leak Detector\\lib\\Win32" /LIBPATH:"E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\lib" /LIBPATH:"E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/build/CMakeFiles/CMakeScratch/TryCompile-ist728/Debug/cmTC_051ef.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/build/CMakeFiles/CMakeScratch/TryCompile-ist728/Debug/cmTC_051ef.lib" /MACHINE:X86 /SAFESEH  /machine:X86 cmTC_051ef.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_051ef.vcxproj -> E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ist728\\Debug\\cmTC_051ef.exe
+        AppLocalFromInstalled:
+          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "E:\\Opensource\\vcpkg_new\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ist728\\Debug\\cmTC_051ef.exe" "E:\\Opensource\\vcpkg_new\\vcpkg\\installed\\x86-windows\\debug\\bin" "cmTC_051ef.dir\\Debug\\cmTC_051ef.tlog\\cmTC_051ef.write.1u.tlog" "cmTC_051ef.dir\\Debug\\vcpkg.applocal.log"
+        FinalizeBuildStatus:
+          正在删除文件“cmTC_051ef.dir\\Debug\\cmTC_051ef.tlog\\unsuccessfulbuild”。
+          正在对“cmTC_051ef.dir\\Debug\\cmTC_051ef.tlog\\cmTC_051ef.lastbuildstate”执行 Touch 任务。
+        已完成生成项目“E:\\MainProjects\\2019\\DAPLINK_DEV\\PowerWriter AT\\PowerWriter_AT_Command_source\\source\\powerwriter_at_commander_csharp\\powerwriter_at_app\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ist728\\cmTC_051ef.vcxproj”(默认目标)的操作。
+        
+        已成功生成。
+            0 个警告
+            0 个错误
+        
+        已用时间 00:00:01.73
+        
+      exitCode: 0
+...

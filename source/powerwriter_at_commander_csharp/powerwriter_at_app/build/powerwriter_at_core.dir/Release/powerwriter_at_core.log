@@ -1,0 +1,20 @@
+﻿  Building Custom Rule E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/CMakeLists.txt
+  powerwriter_at_api.c
+  powerwriter_at_cert.c
+  powerwriter_at_utils.c
+  powerwriter_at_porting.c
+  powerwriter_at_samples.c
+  aes.c
+  crc32.c
+  正在生成代码...
+  powerwriter_at_app.cpp
+  powerwriter_at_opt.cpp
+  SerialPort.cpp
+  SerialPortBase.cpp
+  SerialPortInfo.cpp
+  SerialPortInfoBase.cpp
+  SerialPortInfoWinBase.cpp
+  SerialPortWinBase.cpp
+  正在生成代码...
+    正在创建库 E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/build/lib/Release/powerwriter_at_core.lib 和对象 E:/MainProjects/2019/DAPLINK_DEV/PowerWriter AT/PowerWriter_AT_Command_source/source/powerwriter_at_commander_csharp/powerwriter_at_app/build/lib/Release/powerwriter_at_core.exp
+  powerwriter_at_core.vcxproj -> E:\MainProjects\2019\DAPLINK_DEV\PowerWriter AT\PowerWriter_AT_Command_source\source\powerwriter_at_commander_csharp\powerwriter_at_app\build\bin\Release\powerwriter_at_core.dll
