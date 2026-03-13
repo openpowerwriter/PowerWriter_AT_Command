@@ -24,7 +24,7 @@ namespace powerwriter_at_type
 
     public enum E_ATStatus
     {
-        ATStatusUnknown = 0,
+        ATStatusUnknown = -1,
         ATStatusOk = 0,
         ATStatusProgress,
         ATStatusError,
