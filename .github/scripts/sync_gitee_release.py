@@ -28,6 +28,7 @@ DEFAULT_API = "https://gitee.com/api/v5"
 DEFAULT_OWNER = "openpowerwriter"
 DEFAULT_REPO = "PowerWriter_AT_Command"
 REQUEST_TIMEOUT = 300
+UPLOAD_TIMEOUT = int(os.environ.get("GITEE_UPLOAD_TIMEOUT", "1800"))
 
 
 class GiteeError(RuntimeError):
@@ -55,6 +56,7 @@ def _http(
     url: str,
     data: Optional[bytes] = None,
     headers: Optional[dict[str, str]] = None,
+    timeout: int = REQUEST_TIMEOUT,
 ) -> tuple[int, bytes]:
     request_headers = {
         "User-Agent": "PowerWriter-Release-Sync",
@@ -65,7 +67,7 @@ def _http(
         url, data=data, headers=request_headers, method=method
     )
     try:
-        with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             return response.status, response.read()
     except urllib.error.HTTPError as exc:
         body = exc.read()
@@ -215,6 +217,7 @@ def _upload_asset(
             "Accept": "application/json",
             "Content-Type": "multipart/form-data; boundary=%s" % boundary,
         },
+        timeout=UPLOAD_TIMEOUT,
     )
     result = _json(response, "upload release asset")
     if not isinstance(result, dict):
@@ -308,6 +311,11 @@ def main() -> int:
         help="Gitee access token (default: GITEE_TOKEN)",
     )
     parser.add_argument(
+        "--replace",
+        action="store_true",
+        help="replace existing Gitee assets with the same name",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="print the planned operations without calling Gitee",
@@ -337,6 +345,7 @@ def main() -> int:
         prerelease = bool(release.get("prerelease", False))
 
     assets = _asset_files(args.assets)
+    assets.sort(key=lambda path: path.stat().st_size)
     if not assets:
         log("No release assets matched; the Gitee release will have no binaries.")
 
@@ -388,11 +397,21 @@ def main() -> int:
         )}
         for path in assets:
             old = current.get(path.name)
+            if old and not args.replace:
+                log(
+                    "Gitee asset %s already exists; skipping."
+                    % path.name
+                )
+                continue
             if old and old.get("id") is not None:
                 _delete_asset(
                     api, owner, repo, release_id, int(old["id"]), token
                 )
                 log("Replaced existing Gitee asset %s." % path.name)
+            log(
+                "Uploading %s (%d bytes) to Gitee release %s..."
+                % (path.name, path.stat().st_size, tag)
+            )
             uploaded = _upload_asset(
                 api, owner, repo, release_id, path, token
             )
