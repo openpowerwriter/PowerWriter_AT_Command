@@ -326,7 +326,7 @@ static bool _cmdSetOutPackageData(
 
 	/* Set payload  information */
 	pf->m_payload.m_cmdType = cmd;
-	pf->m_payload.m_cmdSize = _cmdGetPropertySize(pf, cmd);
+	pf->m_payload.m_cmdSize = (uint32_t)_cmdGetPropertySize(pf, cmd);
 
 	/* frame length */
 	// payload_size
@@ -339,7 +339,7 @@ static bool _cmdSetOutPackageData(
 	size_t crc_size = sizeof(pf->m_frameHeader) + sizeof(pf->m_frameLength) + payload_size;
 
 	// frame length
-	pf->m_frameLength = crc_size + sizeof(pf->m_crc32);
+	pf->m_frameLength = (uint32_t)(crc_size + sizeof(pf->m_crc32));
 
 	/* crc32 */
 	pf->m_crc32 = GetCrc32(&pf->m_frameHeader, crc_size);
@@ -650,7 +650,7 @@ bool powerwriter_at_target_write(
 	size_t buffersize)
 {
 	AT_CHECK_PARAM(ch, false)
-	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_size = MIN(PW_PACKAGE_SIZE, buffersize);
+	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_size = (uint32_t)MIN(PW_PACKAGE_SIZE, buffersize);
 	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_address = addr;
 	memcpy(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_buffer, buffer,
 		   ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_size);
@@ -810,23 +810,23 @@ bool powerwriter_at_project_load(
 		   sizeof(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_password));
 	memcpy(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_password, password, strlen(password));
 	// size
-	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_projectSize = prj_size;
+	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_projectSize = (uint32_t)prj_size;
 	// crc
 	ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdLoadProject.m_projectCRC32 = GetCrc32(prj_data, prj_size);
 	if (_powerwriter_at_send_command(ch, ATCmdLoadProject, PW_AT_TIMEOUT_BASE))
 	{
 		size_t packlength = 0;
 		S_ATCmdStatusProgress progress;
-		progress.m_total = prj_size;
+		progress.m_total = (uint32_t)prj_size;
 		progress.m_processed = 0;
 		while (progress.m_processed < progress.m_total)
 		{
 			packlength = MIN(progress.m_total - progress.m_processed, PW_PACKAGE_SIZE);
-			if (!_powerwriter_at_project_load_send(ch, (uint8_t *)prj_data + progress.m_processed, packlength, progress.m_processed))
+			if (!_powerwriter_at_project_load_send(ch, (uint8_t *)prj_data + progress.m_processed, (uint32_t)packlength, progress.m_processed))
 			{
 				return false;
 			}
-			progress.m_processed += packlength;
+			progress.m_processed += (uint32_t)packlength;
 			if (p_cb)
 			{
 				p_cb(&progress);
@@ -954,7 +954,7 @@ bool powerwriter_at_broadcast(
 		// set broadcast property
 		ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdBroadcast.m_keepATFrame = keepframe;
 		ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdBroadcast.m_dirType = bcdir;
-		ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdBroadcast.m_size = bcsize;
+		ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdBroadcast.m_size = (uint32_t)bcsize;
 		memcpy(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdBroadcast.m_data, bcdata, bcsize);
 		// set timeout
 		int timeout = waitrsp ? waitrsptimeout : 0;

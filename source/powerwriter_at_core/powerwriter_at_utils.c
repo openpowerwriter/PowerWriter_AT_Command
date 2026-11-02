@@ -35,12 +35,10 @@ size_t utils_round_up(size_t number, size_t base)
 // print object
 void object_print(void *obj, size_t size, const char *objname)
 {
-	powerwriter_at_log(LOGD, "$%s[%d]:{", objname, size);
+	powerwriter_at_log(LOGD, "$%s[%zu]:{", objname, size);
 	uint8_t *p = (uint8_t *)obj;
-	size_t count = 0;
 	do
 	{
-		count++;
 		powerwriter_at_log(LOGN, "0x%02X,", *p++);
 	} while (--size);
 	powerwriter_at_log(LOGN, "}\r\n");

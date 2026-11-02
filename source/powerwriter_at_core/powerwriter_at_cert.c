@@ -42,11 +42,11 @@ bool powerwriter_at_encrypt(void *data, size_t size, bool encrypt)
     AES_init_ctx_iv(&ctx, m_at_encrypt_key, m_at_encrypt_iv_);
     if (encrypt)
     {
-        AES_CBC_encrypt_buffer(&ctx, data, size);
+        AES_CBC_encrypt_buffer(&ctx, data, (uint32_t)size);
     }
     else
     {
-        AES_CBC_decrypt_buffer(&ctx, data, size);
+        AES_CBC_decrypt_buffer(&ctx, data, (uint32_t)size);
     }
     return true;
 #endif

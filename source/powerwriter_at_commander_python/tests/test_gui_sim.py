@@ -42,13 +42,32 @@ except Exception:  # ImportError, TclError, ...
 
 
 class GuiSimulationTests(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         if not TK_AVAILABLE:
-            self.skipTest("tkinter is not available")
+            raise unittest.SkipTest("tkinter is not available")
+        # macOS hangs when a Tk root is destroyed and a new one is created in
+        # the same process, so create one root for the whole test class and
+        # rebuild only the widgets for each test.
         try:
-            self.root = tk.Tk()
+            cls.root = tk.Tk()
         except tk.TclError as exc:
-            self.skipTest("Tk display unavailable: %s" % exc)
+            raise unittest.SkipTest("Tk display unavailable: %s" % exc)
+        cls.root.withdraw()
+        cls.root.update_idletasks()
+
+    @classmethod
+    def tearDownClass(cls):
+        root = getattr(cls, "root", None)
+        if root is not None:
+            try:
+                root.destroy()
+            except Exception:
+                pass
+            cls.root = None
+
+    def setUp(self):
+        self.root = self.__class__.root
         self.root.withdraw()
 
         self.dialogs = []
@@ -83,20 +102,29 @@ class GuiSimulationTests(unittest.TestCase):
         self.root.update()
 
     def tearDown(self):
-        try:
-            self.app._on_disconnect()
-        except Exception:
-            pass
-        for name, func in self._dialog_backup.items():
-            setattr(gui_module.messagebox, name, func)
-        if getattr(self.app, "_poll_after_id", None):
+        app = getattr(self, "app", None)
+        if app is not None:
+            if getattr(app, "_poll_after_id", None):
+                try:
+                    self.root.after_cancel(app._poll_after_id)
+                except Exception:
+                    pass
+                app._poll_after_id = None
             try:
-                self.root.after_cancel(self.app._poll_after_id)
+                app._on_disconnect()
             except Exception:
                 pass
-            self.app._poll_after_id = None
+        for name, func in getattr(self, "_dialog_backup", {}).items():
+            setattr(gui_module.messagebox, name, func)
+        # Keep the single Tk root alive; remove only this test's widgets so
+        # the next test starts with a clean window.
+        for child in self.root.winfo_children():
+            try:
+                child.destroy()
+            except Exception:
+                pass
         try:
-            self.root.destroy()
+            self.root.update_idletasks()
         except Exception:
             pass
 
