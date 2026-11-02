@@ -1,0 +1,108 @@
+name: PowerWriter AT Python
+
+on:
+  push:
+    paths:
+      - "source/powerwriter_at_commander_python/**"
+      - "source/powerwriter_at_core/**"
+      - ".github/workflows/powerwriter_at_python.yml"
+  pull_request:
+    paths:
+      - "source/powerwriter_at_commander_python/**"
+      - "source/powerwriter_at_core/**"
+      - ".github/workflows/powerwriter_at_python.yml"
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+          - os: ubuntu-latest
+            platform: linux
+          - os: macos-latest
+            platform: macos
+
+    defaults:
+      run:
+        working-directory: source/powerwriter_at_commander_python
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-build.txt cryptography
+          python -c "import sys; print(sys.version)"
+          python -c "import tkinter" || echo "tkinter unavailable; GUI build will be skipped"
+
+      - name: Build C library (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: build_windows.bat
+
+      - name: Build C library (Linux)
+        if: runner.os == 'Linux'
+        run: bash build_linux.sh
+
+      - name: Build C library (macOS)
+        if: runner.os == 'macOS'
+        run: bash build_macos.sh
+
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Build standalone executables
+        run: python build_exe.py
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: powerwriter-at-${{ matrix.platform }}
+          path: |
+            source/powerwriter_at_commander_python/dist/**
+            source/powerwriter_at_commander_python/lib/${{ matrix.platform }}/**
+          if-no-files-found: error
+
+  release:
+    name: Attach binaries to release
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Package artifacts
+        run: |
+          cd artifacts
+          for dir in */; do
+            name="${dir%/}"
+            (cd "$dir" && zip -r "../${name}.zip" .)
+          done
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" artifacts/*.zip --clobber

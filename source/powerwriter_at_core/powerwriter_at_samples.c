@@ -1094,10 +1094,10 @@ bool powerwriter_at_connect_target(S_ATChannel *channel)
 //for offline
 #define AT_OFFLINE_SAMPLE_ENABLE
 
-//#define AT_OFFLINE_PROJECT_LOAD_SAMPLE			/* sample as load project */
+#define AT_OFFLINE_PROJECT_LOAD_SAMPLE			/* sample as load project */
 //#define AT_OFFLINE_PROJECT_INFO_SAMPLE		/* sample as get project information */
 //#define AT_OFFLINE_PROJECT_DISABLE_SAMPLE		/* sample as disable project */
-//#define AT_OFFLINE_START_SAMPLE				/* sample as start offline */
+#define AT_OFFLINE_START_SAMPLE				/* sample as start offline */
 #define AT_OFFLINE_SWITCH_SAMPLE				/* sample as switch offline */
 
 // PowerWriter At interface benchmarking

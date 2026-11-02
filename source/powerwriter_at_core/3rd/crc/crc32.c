@@ -8,7 +8,9 @@
 #define FALSE	0
 #define TRUE	!FALSE
 
-typedef unsigned long  crc;
+/* Use a fixed 32-bit type: unsigned long is 64-bit on LP64 platforms
+ * (Linux/macOS), which would break the CRC algorithm. */
+typedef uint32_t  crc;
 
 #define CRC_NAME			"CRC-32"
 #define POLYNOMIAL			0x04C11DB7
@@ -46,10 +48,10 @@ typedef unsigned long  crc;
  * Notes:		No checking is done that nBits <= 32.
  * Returns:		The reflection of the original data.
  *********************************************************************/
-static unsigned long
-reflect(unsigned long data, unsigned char nBits)
+static uint32_t
+reflect(uint32_t data, unsigned char nBits)
 {
-    unsigned long  reflection = 0x00000000;
+    uint32_t  reflection = 0x00000000;
     unsigned char  bit;
     for (bit = 0; bit < nBits; ++bit) {
         if (data & 0x01) {

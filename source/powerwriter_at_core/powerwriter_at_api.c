@@ -49,7 +49,10 @@ bool powerwriter_at_init(
 	ch->m_config.m_eventOut = pfEvent;
 
 	// Initial AT cmd frame header
-	strcpy(ch->m_cmdOutput.m_frameHeader, PW_AT_FRAME_HDR_STR);
+	// Note: the header is exactly PW_AT_FRAME_HDR_SIZE bytes and is not
+	// NUL-terminated. Use memcpy instead of strcpy to avoid writing the
+	// terminating NUL past the 4-byte array (caught by _FORTIFY_SOURCE).
+	memcpy(ch->m_cmdOutput.m_frameHeader, PW_AT_FRAME_HDR_STR, PW_AT_FRAME_HDR_SIZE);
 
 	return true;
 }
@@ -652,7 +655,7 @@ bool powerwriter_at_target_write(
 	memcpy(ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_buffer, buffer,
 		   ch->m_cmdOutput.m_payload.m_cmdProperty.m_ATCmdWriteTargetMemory.m_size);
 
-	return _powerwriter_at_send_command(ch, ATCmdWriteTargetMemory, PW_AT_TIMEOUT_BASE);
+	return _powerwriter_at_send_command(ch, ATCmdWriteTargetMemory, PW_AT_TIMEOUT_WRITE);
 }
 
 /*

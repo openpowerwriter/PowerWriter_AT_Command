@@ -1,0 +1,4 @@
+# Internal device-test report and raw captures: do not publish these.
+DEVICE_TEST_REPORT.md
+tools/at_*.jsonl
+tools/offline_probe_result.json

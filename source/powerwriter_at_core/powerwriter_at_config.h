@@ -62,6 +62,9 @@ static	uint8_t m_at_encrypt_iv_[] = { 0x4b,0xfe,0xb6,0x18,0xb2,0xf1,0xf1,0xc9,0x
 #define PW_AT_FRAME_HDR_STR "PWAT"				// PowerWriter AT command frame header string
 #define PW_AT_DEFAULT_BAUDRATE 9600				// PowerWriter AT command default baud rate
 #define PW_AT_TIMEOUT_BASE 5000					// PowerWriter AT command timeout general
+// Target flash write can take much longer on OTP devices.
+// Use a longer timeout for ATCmdWriteTargetMemory.
+#define PW_AT_TIMEOUT_WRITE 20000
 #define PW_AT_TIMEOUT_MIN 100					// PowerWriter AT command timeout min
 #define PW_AT_DEFAULT_PASSWORD 0x00				// Default powerwriter project key
 /* multi threading */

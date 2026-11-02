@@ -1,0 +1,101 @@
+﻿  aes.c
+  crc32.c
+  powerwriter_at_api.c
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_core\powerwriter_at_api.c(326): warning C4267: “=”: 从“size_t”转换到“uint32_t”，可能丢失数据
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_core\powerwriter_at_api.c(339): warning C4267: “=”: 从“size_t”转换到“uint32_t”，可能丢失数据
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_core\powerwriter_at_api.c(650): warning C4267: “=”: 从“size_t”转换到“uint32_t”，可能丢失数据
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_core\powerwriter_at_api.c(810): warning C4267: “=”: 从“size_t”转换到“uint32_t”，可能丢失数据
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_core\powerwriter_at_api.c(817): warning C4267: “=”: 从“size_t”转换到“uint32_t”，可能丢失数据
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_core\powerwriter_at_api.c(822): warning C4267: “函数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_core\powerwriter_at_api.c(826): warning C4267: “+=”: 从“size_t”转换到“uint32_t”，可能丢失数据
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_core\powerwriter_at_api.c(954): warning C4267: “=”: 从“size_t”转换到“uint32_t”，可能丢失数据
+  powerwriter_at_cert.c
+  powerwriter_at_porting.c
+  powerwriter_at_samples.c
+  powerwriter_at_utils.c
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_core\powerwriter_at_utils.c(38): warning C4477: “printf”: 格式字符串“%d”需要类型“int”的参数，但可变参数 3 拥有了类型“size_t”
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_core\powerwriter_at_utils.c(38): note: 请考虑在格式字符串中使用“%zd”
+  正在生成代码...
+  SerialPort.cpp
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\sigslot.h(178): error C2065: “single_threaded”: 未声明的标识符
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.h(35): error C2923: “sigslot::has_slots”: 对于参数“mt_policy”，“single_threaded”不是有效的 模板 类型变量
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.h(36): error C2923: “sigslot::has_slots”: 对于参数“mt_policy”，“single_threaded”不是有效的 模板 类型变量
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.h(36): error C2955: “sigslot::has_slots”: 使用 类 模板 需要 模板 参数列表
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\sigslot.h(179): note: 参见“sigslot::has_slots”的声明
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\sigslot.h(396): error C2065: “single_threaded”: 未声明的标识符
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.h(296): error C2923: “sigslot::signal0”: 对于参数“mt_policy”，“single_threaded”不是有效的 模板 类型变量
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.h(297): error C2923: “sigslot::signal0”: 对于参数“mt_policy”，“single_threaded”不是有效的 模板 类型变量
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialportwinbase.h(359): error C2923: “sigslot::signal0”: 对于参数“mt_policy”，“single_threaded”不是有效的 模板 类型变量
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialportwinbase.h(360): error C2923: “sigslot::signal0”: 对于参数“mt_policy”，“single_threaded”不是有效的 模板 类型变量
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(22): error C2512: “sigslot::signal0”: 没有合适的默认构造函数可用
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\sigslot.h(397): note: 参见“sigslot::signal0”的声明
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(27): error C2662: “void sigslot::signal0<mt_policy>::connect<itas109::CSerialPort>(desttype *,void (__cdecl itas109::CSerialPort::* )(void))”: 不能将“this”指针从“sigslot::signal0”转换为“sigslot::signal0<mt_policy> &”
+          with
+          [
+              desttype=itas109::CSerialPort
+          ]
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(27): note: 原因如下: 无法从“sigslot::signal0”转换为“sigslot::signal0<mt_policy>”
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(27): note: 转换要求第二个用户定义的转换运算符或构造函数
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(28): error C2662: “void sigslot::signal0<mt_policy>::connect<itas109::CSerialPort>(desttype *,void (__cdecl itas109::CSerialPort::* )(void))”: 不能将“this”指针从“sigslot::signal0”转换为“sigslot::signal0<mt_policy> &”
+          with
+          [
+              desttype=itas109::CSerialPort
+          ]
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(28): note: 原因如下: 无法从“sigslot::signal0”转换为“sigslot::signal0<mt_policy>”
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(28): note: 转换要求第二个用户定义的转换运算符或构造函数
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(33): error C2512: “sigslot::signal0”: 没有合适的默认构造函数可用
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\sigslot.h(397): note: 参见“sigslot::signal0”的声明
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(38): error C2662: “void sigslot::signal0<mt_policy>::connect<itas109::CSerialPort>(desttype *,void (__cdecl itas109::CSerialPort::* )(void))”: 不能将“this”指针从“sigslot::signal0”转换为“sigslot::signal0<mt_policy> &”
+          with
+          [
+              desttype=itas109::CSerialPort
+          ]
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(38): note: 原因如下: 无法从“sigslot::signal0”转换为“sigslot::signal0<mt_policy>”
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(38): note: 转换要求第二个用户定义的转换运算符或构造函数
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(39): error C2662: “void sigslot::signal0<mt_policy>::connect<itas109::CSerialPort>(desttype *,void (__cdecl itas109::CSerialPort::* )(void))”: 不能将“this”指针从“sigslot::signal0”转换为“sigslot::signal0<mt_policy> &”
+          with
+          [
+              desttype=itas109::CSerialPort
+          ]
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(39): note: 原因如下: 无法从“sigslot::signal0”转换为“sigslot::signal0<mt_policy>”
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(39): note: 转换要求第二个用户定义的转换运算符或构造函数
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(368): error C2662: “void sigslot::signal0<mt_policy>::_emit(void)”: 不能将“this”指针从“sigslot::signal0”转换为“sigslot::signal0<mt_policy> &”
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(368): note: 原因如下: 无法从“sigslot::signal0”转换为“sigslot::signal0<mt_policy>”
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(368): note: 转换要求第二个用户定义的转换运算符或构造函数
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(373): error C2662: “void sigslot::signal0<mt_policy>::_emit(void)”: 不能将“this”指针从“sigslot::signal0”转换为“sigslot::signal0<mt_policy> &”
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(373): note: 原因如下: 无法从“sigslot::signal0”转换为“sigslot::signal0<mt_policy>”
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.cpp(373): note: 转换要求第二个用户定义的转换运算符或构造函数
+  SerialPortBase.cpp
+  SerialPortInfo.cpp
+  SerialPortInfoBase.cpp
+  SerialPortInfoWinBase.cpp
+  SerialPortWinBase.cpp
+  powerwriter_at_commander.cpp
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\sigslot.h(178): error C2065: “single_threaded”: 未声明的标识符
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.h(35): error C2923: “sigslot::has_slots”: 对于参数“mt_policy”，“single_threaded”不是有效的 模板 类型变量
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.h(36): error C2923: “sigslot::has_slots”: 对于参数“mt_policy”，“single_threaded”不是有效的 模板 类型变量
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.h(36): error C2955: “sigslot::has_slots”: 使用 类 模板 需要 模板 参数列表
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\sigslot.h(179): note: 参见“sigslot::has_slots”的声明
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\sigslot.h(396): error C2065: “single_threaded”: 未声明的标识符
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.h(296): error C2923: “sigslot::signal0”: 对于参数“mt_policy”，“single_threaded”不是有效的 模板 类型变量
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\serialport.h(297): error C2923: “sigslot::signal0”: 对于参数“mt_policy”，“single_threaded”不是有效的 模板 类型变量
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\serialportapp.h(16): error C2923: “sigslot::has_slots”: 对于参数“mt_policy”，“single_threaded”不是有效的 模板 类型变量
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\serialportapp.h(17): error C2923: “sigslot::has_slots”: 对于参数“mt_policy”，“single_threaded”不是有效的 模板 类型变量
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\serialportapp.h(17): error C2955: “sigslot::has_slots”: 使用 类 模板 需要 模板 参数列表
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\cserialport\sigslot.h(179): note: 参见“sigslot::has_slots”的声明
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\serialportapp.h(20): error C2662: “void sigslot::signal0<mt_policy>::connect<SerialPortApp>(desttype *,void (__cdecl SerialPortApp::* )(void))”: 不能将“this”指针从“sigslot::signal0”转换为“sigslot::signal0<mt_policy> &”
+          with
+          [
+              desttype=SerialPortApp
+          ]
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\serialportapp.h(20): note: 原因如下: 无法从“sigslot::signal0”转换为“sigslot::signal0<mt_policy>”
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\serialportapp.h(20): note: 转换要求第二个用户定义的转换运算符或构造函数
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\serialportapp.h(21): error C2662: “void sigslot::signal0<mt_policy>::connect<SerialPortApp>(desttype *,void (__cdecl SerialPortApp::* )(void))”: 不能将“this”指针从“sigslot::signal0”转换为“sigslot::signal0<mt_policy> &”
+          with
+          [
+              desttype=SerialPortApp
+          ]
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\serialportapp.h(21): note: 原因如下: 无法从“sigslot::signal0”转换为“sigslot::signal0<mt_policy>”
+  e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\serialportapp.h(21): note: 转换要求第二个用户定义的转换运算符或构造函数
+e:\mainprojects\2019\daplink_dev\powerwriter at\powerwriter_at_command_source\source\powerwriter_at_commander_windows\powerwriter_at_commander\serialportapp.h(56): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+  正在生成代码...
