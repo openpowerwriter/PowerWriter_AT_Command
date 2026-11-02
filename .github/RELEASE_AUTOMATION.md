@@ -1,12 +1,16 @@
 # Release automation
 
 `workflows/powerwriter_at_python.yml` builds the C library and the standalone
-Python executables on Windows, Linux, and macOS. When a GitHub Release is
-published, the release job:
+Python executables on Windows, Linux, and macOS. The release job behaves as
+follows:
 
-1. Packages each platform artifact as `powerwriter-at-<platform>.zip`.
-2. Uploads the ZIP files to the GitHub Release.
-3. Mirrors the release metadata and ZIP files to Gitee.
+- On every push to `main`, it creates a prerelease tagged
+  `v<version>-build.<run_number>` and uploads the three platform ZIP files.
+  Each ZIP contains the executables and the matching runtime library.
+- When a GitHub Release is published manually, it uploads the same ZIP files
+  to that release instead of creating a new one.
+- When Gitee credentials are configured, it also mirrors the release metadata
+  and ZIP files to Gitee.
 
 ## Gitee setup
 

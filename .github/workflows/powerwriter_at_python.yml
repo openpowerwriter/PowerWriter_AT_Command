@@ -2,6 +2,8 @@ name: PowerWriter AT Python
 
 on:
   push:
+    branches:
+      - main
     paths:
       - "source/powerwriter_at_commander_python/**"
       - "source/powerwriter_at_core/**"
@@ -83,8 +85,8 @@ jobs:
           if-no-files-found: error
 
   release:
-    name: Attach binaries to release
-    if: github.event_name == 'release'
+    name: Publish release
+    if: github.event_name == 'release' || github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -96,7 +98,31 @@ jobs:
           fetch-depth: 1
           sparse-checkout: |
             .github
+            source/powerwriter_at_commander_python/pw_at/__init__.py
           sparse-checkout-cone-mode: false
+
+      - name: Resolve release
+        id: release
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          if [ "${EVENT_NAME}" = "release" ]; then
+            tag="${RELEASE_TAG}"
+            title=""
+            prerelease="false"
+          else
+            version="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' source/powerwriter_at_commander_python/pw_at/__init__.py)"
+            [ -n "${version}" ] || version="0.0.0"
+            tag="v${version}-build.${RUN_NUMBER}"
+            title="PowerWriter AT Python v${version} build ${RUN_NUMBER}"
+            prerelease="true"
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "title=${title}" >> "$GITHUB_OUTPUT"
+          echo "prerelease=${prerelease}" >> "$GITHUB_OUTPUT"
+          echo "Release tag: ${tag}"
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -111,10 +137,35 @@ jobs:
             (cd "$dir" && zip -r "../${name}.zip" .)
           done
 
+      - name: Create push release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+          TITLE: ${{ steps.release.outputs.title }}
+        run: |
+          if gh release view "${TAG}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists; updating assets."
+          else
+            gh release create "${TAG}" \
+              --repo "${{ github.repository }}" \
+              --target "${{ github.sha }}" \
+              --title "${TITLE}" \
+              --generate-notes \
+              --prerelease
+          fi
+
       - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name }}" artifacts/*.zip --clobber --repo "${{ github.repository }}"
+          TAG: ${{ steps.release.outputs.tag }}
+        run: gh release upload "${TAG}" artifacts/*.zip --clobber --repo "${{ github.repository }}"
+
+      - name: Fetch release metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: gh api "repos/${{ github.repository }}/releases/tags/${TAG}" > release.json
 
       - name: Sync release to Gitee
         env:
@@ -124,6 +175,7 @@ jobs:
           GITEE_TARGET_COMMITISH: main
         run: |
           python .github/scripts/sync_gitee_release.py \
-            --event "$GITHUB_EVENT_PATH" \
+            --event release.json \
+            --tag "${{ steps.release.outputs.tag }}" \
             --target "$GITEE_TARGET_COMMITISH" \
             --assets artifacts/*.zip
