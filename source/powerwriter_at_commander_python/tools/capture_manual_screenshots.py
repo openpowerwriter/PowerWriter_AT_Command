@@ -98,7 +98,7 @@ def main() -> int:
     root = tk.Tk()
     root.title("PowerWriter AT Commander")
     root.geometry("1440x920+30+30")
-    app = PowerWriterGui(root)
+    app = PowerWriterGui(root, language="en", maximized=False)
     root.update_idletasks()
 
     client = DummyClient()

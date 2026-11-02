@@ -331,7 +331,35 @@ Start the GUI:
 powerwriter_at_gui_python.exe
 ```
 
-### 5.1 Connection bar
+### 5.1 Language selection
+
+The language selector at the right side of the connection bar, after the
+`PowerWriter only` checkbox, changes the GUI language immediately. On first
+start the GUI uses the system UI language when it is supported, otherwise
+English. The selection is saved per user and restored on the next start. The
+window starts maximized by default.
+
+Supported languages (48): English, Simplified Chinese, Traditional Chinese,
+Japanese, Korean, Vietnamese, Thai, Indonesian, Malay, Filipino, Russian,
+Arabic, German, French, Spanish, Portuguese, Italian, Turkish, Hindi, Bengali,
+Urdu, Tamil, Telugu, Malayalam, Kannada, Marathi, Gujarati, Punjabi, Persian,
+Hebrew, Dutch, Polish, Ukrainian, Greek, Swedish, Norwegian, Danish, Finnish,
+Czech, Romanian, Hungarian, Bulgarian, Serbian, Slovak, Lithuanian, Swahili,
+Afrikaans, and Azerbaijani.
+
+Translations are stored as independent JSON files under `i18n/`. Edit the
+matching file to refine a translation; no Python code change is required.
+Initial non-Chinese translations were generated from the Chinese reference
+and automatically checked for key coverage and placeholder integrity; native
+speaker refinements are welcome. Right-to-left and Indic scripts are rendered
+by the operating system font; the overall window layout remains left-to-right.
+
+The command-line interface remains English. GUI labels, dialog messages,
+operation status and GUI log messages use the selected language. Raw AT frame
+logs and the sample-workflow reference text stay in English for technical
+clarity.
+
+### 5.2 Connection bar
 
 | Control | Description |
 |---|---|
@@ -341,12 +369,13 @@ powerwriter_at_gui_python.exe
 | `AES128-CBC encryption` | Enable encrypted communication |
 | `Connect` / `Disconnect` | Open or close the serial port |
 | `PowerWriter only` | Show only detected PowerWriter devices |
+| `Language` | GUI language selection |
 | Status line | Connection and operation status |
 
 Enable AT mode in the PowerWriter device preferences and close other serial
 applications before connecting.
 
-### 5.2 Tabs
+### 5.3 Tabs
 
 #### Device Info
 
@@ -358,28 +387,43 @@ version, bound library and encryption state. Buttons: `Refresh info`, `About`.
 - `Target info (read-only)`: vendor, series and model.
 - `Basic Settings`: erase mode, VEXT, clock, buzzer and OptionByte update mode.
 - `Offline Settings`: target auto-detect and debounce times.
-- `Output Control`: power-off/run-after-programming and debounce times.
+- `Output Control`: power-off/run-after-programming, debounce times and
+  `Reset pin control`. It uses the same 0-7 reset modes as `Reset` on the
+  `Online Operations` page: hardware keep-low/high-Z/reset, hardware + core
+  reset, software core/vector reset, power-on reset, and power-on reset with
+  released ports. An out-of-range value returned by the device is shown and
+  preserved rather than silently changed.
 - `AT Interface`: set the AT baud rate.
 - Buttons: `Read config`, `Apply config`, `Set baud rate`.
 
-#### Target Chip
+The configuration page covers every field in the C
+`S_ATCmdRspWriterCfg` structure: target names, base settings, offline settings,
+output control and the reset-pin output mode. Read-only fields follow the C
+comments and cannot be edited.
+
+#### Online Operations
 
 - `Connect target`, `Query status`, `Read ID`.
 - `Reset`.
 - `Erase`: `Chip erase`, sector address/length, `Erase sector`.
 - `Read Target Memory`: address, length, `Read`, `Save...`.
-- `Write Target Memory`: address, file, `Browse...`, verify/prepare options,
-  `Write`, `Send prepare only`.
+- `Write Target Memory`: file, `Browse...`, verify/prepare options, `Write`,
+  `Send prepare only`. For `.hex`/`.ihx` files the address field is disabled:
+  addresses come from the file, including multi-segment files. For `.bin` and
+  `.img` files the explicit address field is used.
 - `OptionByte`: `Read OB`, `Write vendor default OB`, `Write user OB`.
 - `Factory Test`: `Run factory SRAM firmware`, `Run factory Flash firmware`.
 
-#### Offline Project
+#### Offline Programming
 
 - `Project Info`: status, size, CRC32, `Refresh`.
 - `Load project`: file, project name, password, file-name encoding,
   `Load to writer`, `Disable Project`.
-- `Offline Write`: `Start offline write`, `Query status`.
+- `Offline Write`: `Start offline write`, `Query status`, `Stop polling`.
+  After starting, the GUI polls the offline status automatically until it
+  completes, fails, or is stopped.
 - `Switch Project (PWX1)`: project name, password, reload option, `Switch`.
+  A success message and log entry are shown after switching.
 
 #### Broadcast
 
@@ -397,12 +441,12 @@ Provides `Run safe workflow` (read-only steps) and
 Shows operation and communication logs. `Clear` clears the pane; `Save log...`
 writes the log to a file.
 
-### 5.3 Recommended GUI workflow
+### 5.4 Recommended GUI workflow
 
 1. Select the PowerWriter port and click `Connect`.
-2. Open `Offline Project`, choose the matching `.pkg`, click `Load to writer`,
+2. Open `Offline Programming`, choose the matching `.pkg`, click `Load to writer`,
    then `Refresh` and confirm `Status: Valid`.
-3. Open `Target Chip`, click `Connect target` and `Query status`.
+3. Open `Online Operations`, click `Connect target` and `Query status`.
 4. Use `Read Target Memory`, `Write Target Memory`, `Erase` or `OptionByte`
    as required.
 5. For offline programming, use `Offline Write` -> `Start offline write`, then
@@ -426,13 +470,13 @@ The screenshots below use simulated device data (COM3, PWX1, demo serial number,
 
 ![Figure 2 - Device Config tab](images/gui_02_device_config.png)
 
-**Figure 3 - Target Chip tab**
+**Figure 3 - Online Operations tab**
 
-![Figure 3 - Target Chip tab](images/gui_03_target_chip.png)
+![Figure 3 - Online Operations tab](images/gui_03_target_chip.png)
 
-**Figure 4 - Offline Project tab**
+**Figure 4 - Offline Programming tab**
 
-![Figure 4 - Offline Project tab](images/gui_04_offline_project.png)
+![Figure 4 - Offline Programming tab](images/gui_04_offline_project.png)
 
 **Figure 5 - Broadcast tab**
 
@@ -476,7 +520,7 @@ Target clock: 10MHz (default)
 
 GUI:
 
-1. Open `Offline Project`.
+1. Open `Offline Programming`.
 2. Click `Browse...` and select `stm32f071.pkg`.
 3. Click `Load to writer`.
 4. Click `Refresh` and verify:
@@ -505,7 +549,7 @@ CRC32   : 0xFAFEF9BE
 
 GUI:
 
-1. Open `Target Chip`.
+1. Open `Online Operations`.
 2. Click `Connect target`.
 3. Click `Query status`; the status should become `Connected`.
 4. Click `Read ID` (example result: `1B A0 5A C3`).
@@ -535,7 +579,7 @@ Chip ID: 1B A0 5A C3
 GUI:
 
 1. Confirm that the project status is `Valid`.
-2. Open `Offline Project` -> `Offline Write`.
+2. Open `Offline Programming` -> `Offline Write`.
 3. Click `Start offline write`.
 4. Click `Query status` and wait until the status reports completion.
 

@@ -95,6 +95,7 @@ def build_one(library: Path, entry: str, name: str, windowed: bool) -> None:
         "--add-binary", "%s%slib/%s/%s" % (library, separator, plat, arch),
         "--add-data", "%s%sassets" % (
             ROOT / "assets" / "powerwriter_at_demo_project.pkg", separator),
+        "--add-data", "%s%si18n" % (ROOT / "i18n", separator),
         "--console" if not windowed else "--windowed",
         str(ROOT / entry),
     ]

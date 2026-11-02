@@ -21,6 +21,8 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, HERE)
 
 from pw_at import ATError, PowerWriterAT   # noqa: E402
+from pw_at.i18n import LANGUAGE_NAMES      # noqa: E402
+from pw_at.models import WriterConfig      # noqa: E402
 from test_bridge import (                  # noqa: E402
     CMD_BROADCAST,
     CMD_CONNECT_TARGET,
@@ -86,7 +88,8 @@ class GuiSimulationTests(unittest.TestCase):
         gui_module.messagebox.showerror = (
             lambda *a, **k: self.errors.append(("error", a)))
 
-        self.app = gui_module.PowerWriterGui(self.root)
+        self.app = gui_module.PowerWriterGui(
+            self.root, language="en", maximized=False)
         self.device = FakeDevice()
         self.client = PowerWriterAT(log=self.app._log_cb)
         self.transport = LoopTransport(None, self.device)
@@ -243,16 +246,17 @@ class GuiSimulationTests(unittest.TestCase):
         self.wait_idle()
         app._offline_start()
         self.wait_idle()
-        self.assertEqual(app.offline_status_var.get(), "Offline write started")
+        self.assertEqual(app.offline_status_var.get(), "Offline write completed")
 
-        app._offline_query()
-        self.wait_idle()
         app._offline_query()
         self.wait_idle()
         self.assertEqual(app.offline_status_var.get(), "Offline write completed")
         app.switch_name_var.set("demo.pkg")
         app._project_switch()
         self.wait_idle()
+        self.assertTrue(any(
+            "Project switched successfully" in dialog[1][1]
+            for dialog in self.dialogs))
 
         # Broadcast
         app.broadcast_text.delete("1.0", "end")
@@ -285,6 +289,71 @@ class GuiSimulationTests(unittest.TestCase):
         app._run_demo(True)
         self.wait_idle(timeout=60.0)
         self.assertEqual(app.demo_status_var.get(), "Done")
+
+    def test_language_switch_updates_widgets(self):
+        app = self.app
+        app.language_var.set(LANGUAGE_NAMES["zh-CN"])
+        app._on_language_change()
+        translated = app._t("Connection")
+        self.assertNotEqual(translated, "Connection")
+        texts = []
+        for widget in [app.main, *app._walk_widgets(app.main)]:
+            try:
+                texts.append(widget.cget("text"))
+            except Exception:
+                pass
+        self.assertTrue(any(translated in text for text in texts))
+
+        app.language_var.set("English")
+        app._on_language_change()
+        self.assertEqual(app._t("Connection"), "Connection")
+
+    def test_language_selector_lists_all_languages(self):
+        app = self.app
+        values = list(app.language_combo["values"])
+        self.assertEqual(len(values), len(LANGUAGE_NAMES))
+        self.assertIn("Русский", values)
+        self.assertIn("हिन्दी", values)
+        self.assertGreaterEqual(int(app.language_combo.cget("height")), 24)
+
+    def test_reset_pin_config_accepts_all_modes(self):
+        app = self.app
+        for value in range(8):
+            app._apply_config(WriterConfig(reset_type=value))
+            self.assertEqual(app._collect_config().reset_type, value)
+
+    def test_hex_multi_segment_write(self):
+        def record(address, record_type, payload):
+            body = bytes([
+                len(payload), (address >> 8) & 0xFF, address & 0xFF,
+                record_type,
+            ]) + bytes(payload)
+            return ":" + (body + bytes([(-sum(body)) & 0xFF])).hex().upper()
+
+        content = "\n".join([
+            record(0, 0x00, b"\x11\x22"),
+            record(0x10, 0x00, b"\x33\x44"),
+            record(0, 0x01, b""),
+        ]) + "\n"
+        with tempfile.NamedTemporaryFile(
+                mode="w", delete=False, suffix=".hex", encoding="ascii") as fp:
+            fp.write(content)
+            temp_path = fp.name
+        try:
+            app = self.app
+            app._target_connect()
+            self.wait_idle()
+            app.write_file_var.set(temp_path)
+            app.write_addr_var.set("0xDEADBEEF")
+            app.write_verify_var.set(True)
+            app.write_prepare_var.set(True)
+            app._write_memory()
+            self.wait_idle()
+            self.assertEqual(bytes(self.device.flash[:2]), b"\x11\x22")
+            self.assertEqual(bytes(self.device.flash[0x10:0x12]), b"\x33\x44")
+            self.assertIn("passed", app.write_status_var.get())
+        finally:
+            os.unlink(temp_path)
 
     def test_gui_error_handling_with_simulated_errors(self):
         app = self.app

@@ -48,7 +48,7 @@ powerwriter_at_commander_python/
 │   └── __init__.py
 ├── powerwriter_at_cli.py       # 命令行入口
 ├── powerwriter_at_gui.py       # GUI 入口（tkinter）
-├── tests/                      # 自动化测试（23 项）
+├── tests/                      # 自动化测试（协议 / CLI / GUI / HEX / 多语言）
 ├── assets/
 │   └── powerwriter_at_demo_project.pkg   # 从 samples.c 提取的演示工程
 ├── lib/                        # 编译输出（按平台/架构分目录）
@@ -297,13 +297,27 @@ python powerwriter_at_gui.py
 | --- | --- |
 | 设备信息 | `get_writer_info`、绑定库信息、关于 |
 | 设备配置 | `get_writer_config` / `set_writer_config`、`set_baudrate` |
-| 目标芯片 | `target_connect` / `target_status` / `target_get_id` / `target_read` / `target_write_prepare` / `target_write` / `target_erase` / `target_erase_sector` / `target_read_ob` / `target_write_vendor_ob` / `target_write_user_ob` / `target_reset` / 工厂固件 |
-| 离线项目 | `project_info` / `project_load` / `project_disable` / `offline_start` / `offline_status` / `project_switch` |
+| 在线操作 | `target_connect` / `target_status` / `target_get_id` / `target_read` / `target_write_prepare` / `target_write` / `target_erase` / `target_erase_sector` / `target_read_ob` / `target_write_vendor_ob` / `target_write_user_ob` / `target_reset` / 工厂固件 |
+| 脱机编程 | `project_info` / `project_load` / `project_disable` / `offline_start` / `offline_status` / `project_switch` |
 | 广播 | `broadcast`（无需应答 / 等待响应） |
 | 示例流程 | 与 `samples.c` 对应的完整调用顺序，可运行安全流程或破坏性流程 |
 | 日志 | 通信帧、错误、进度；可保存 |
 
 所有耗时操作在后台线程执行，界面不会卡死；破坏性操作会二次确认。
+
+GUI 连接栏右侧提供语言选择，首次启动自动匹配系统语言，支持 48 种语言，包括
+英语、简体中文、繁体中文、日语、韩语、越南语、泰语、印度尼西亚语、马来语、
+菲律宾语、俄语、阿拉伯语、德语、法语、西班牙语、葡萄牙语、意大利语、土耳其语、
+印地语、孟加拉语、乌尔都语、泰米尔语、泰卢固语、马拉雅拉姆语、卡纳达语、
+马拉地语、古吉拉特语、旁遮普语、波斯语、希伯来语、荷兰语、波兰语、乌克兰语、
+希腊语、瑞典语、挪威语、丹麦语、芬兰语、捷克语、罗马尼亚语、匈牙利语、
+保加利亚语、塞尔维亚语、斯洛伐克语、立陶宛语、斯瓦希里语、南非荷兰语和
+阿塞拜疆语。翻译资源位于 `i18n/*.json`，可直接修改。CLI 保持英文。
+
+GUI 默认最大化启动，按钮会根据当前语言文字长度自适应；“在线操作”页写入
+`.hex`/`.ihx` 时会自动解析多段地址并禁用地址输入框，`.bin`/`.img` 仍使用显式地址。
+“脱机编程”页启动脱机烧录后自动轮询状态，并提供“停止轮询”；切换工程成功后会
+显示成功提示和日志。
 
 ## 打包为独立 EXE（无外部依赖）
 
@@ -364,11 +378,11 @@ dist\powerwriter_at_gui_python.exe --smoke-test :: 自检后退出，返回码 0
 python -m unittest discover -s tests -v
 ```
 
-当前共 36 项测试，覆盖：
+当前共 64 项测试，覆盖：
 
 - C 动态库加载、ABI 版本、回调桥接；
 - 帧解析、CRC、垃圾数据重同步；
-- 信息/配置读取与写入（全部字段）；
+- 信息/配置读取与写入（全部字段，含复位引脚控制 0-7）；
 - 目标连接/状态/ID/读写/擦除/OptionByte/复位；
 - 写准备、波特率切换；
 - 离线工程加载、查询、禁用、启动、状态轮询、切换；
@@ -379,6 +393,10 @@ python -m unittest discover -s tests -v
 - CLI 参数解析（`--port` 前后两种写法、命令完整性）；
 - CLI 全命令在“正常应答”下的端到端逻辑（模拟设备返回正确数据）；
 - GUI 全流程在“正常应答”下的控件状态、配置回填、进度、文件读写、广播响应；
+- Intel HEX 解析：数据记录、扩展段/线性地址、校验和、重叠检测、多段合并；
+- GUI 多段 HEX 写入、地址自动取自文件、逐段校验；
+- GUI 启动脱机烧录后的自动状态轮询与停止轮询；
+- 48 种语言资源完整性、占位符签名、元数据、系统语言检测与保存；
 - **每个 API 的异常返回值注入**：逐一注入设备错误码，验证客户端抛出
   正确的 `PowerWriterATError`、CLI 错误提示、GUI 错误弹窗；
 - 错误响应类型、CRC 错误帧、超时、坏帧后正常帧恢复；

@@ -321,7 +321,29 @@ powerwriter_at_cli_python.exe --port COM3 offline-status
 powerwriter_at_gui_python.exe
 ```
 
-### 5.1 连接栏
+### 5.1 语言设置
+
+语言选择框位于连接栏右侧、`PowerWriter only` 复选框后面，可立即切换 GUI 语言。
+首次启动时自动使用系统 UI 语言；如果系统语言不受支持，则使用英文。用户选择会按
+当前用户保存，并在下次启动时恢复。窗口默认以最大化方式启动。
+
+支持语言（48 种）：英语、简体中文、繁体中文、日语、韩语、越南语、泰语、
+印度尼西亚语、马来语、菲律宾语、俄语、阿拉伯语、德语、法语、西班牙语、
+葡萄牙语、意大利语、土耳其语、印地语、孟加拉语、乌尔都语、泰米尔语、
+泰卢固语、马拉雅拉姆语、卡纳达语、马拉地语、古吉拉特语、旁遮普语、波斯语、
+希伯来语、荷兰语、波兰语、乌克兰语、希腊语、瑞典语、挪威语、丹麦语、芬兰语、
+捷克语、罗马尼亚语、匈牙利语、保加利亚语、塞尔维亚语、斯洛伐克语、立陶宛语、
+斯瓦希里语、南非荷兰语、阿塞拜疆语。
+
+翻译资源独立存放在 `i18n/` 目录下的 JSON 文件中；修改对应文件即可调整翻译，
+不需要修改 Python 代码。非中文翻译以中文语义为基准生成，并自动检查键完整性
+和占位符一致性；欢迎母语使用者通过 JSON 文件提交改进。阿拉伯语、希伯来语等
+从右向左书写的语言由系统字体渲染，窗口整体布局仍保持从左到右。
+
+命令行版本保持英文。GUI 标签、对话框、操作状态和 GUI 日志消息使用所选语言；
+底层 AT 帧日志和示例流程说明保留英文，便于技术排查。
+
+### 5.2 连接栏
 
 | 控件 | 说明 |
 |---|---|
@@ -331,11 +353,12 @@ powerwriter_at_gui_python.exe
 | `AES128-CBC encryption` | 启用加密通信 |
 | `Connect` / `Disconnect` | 打开或关闭串口 |
 | `PowerWriter only` | 只显示识别到的 PowerWriter |
+| `Language` | GUI 语言选择 |
 | 状态行 | 显示连接和操作状态 |
 
 连接前请在 PowerWriter 设备首选项中开启 AT 模式，并关闭其他占用串口的程序。
 
-### 5.2 功能页
+### 5.3 功能页
 
 #### Device Info
 
@@ -347,28 +370,37 @@ powerwriter_at_gui_python.exe
 - `Target info (read-only)`：厂商、系列、型号。
 - `Basic Settings`：擦除方式、VEXT、时钟、蜂鸣器、OptionByte 更新方式。
 - `Offline Settings`：目标自动检测和插入/拔出去抖。
-- `Output Control`：烧录后断电/运行、上电/断电去抖。
+- `Output Control`：烧录后断电/运行、上电/断电去抖，以及 `Reset pin control`。
+  它使用与 `在线操作` 页面 `Reset` 相同的 0-7 复位方式：硬件保持低电平/高阻/
+  硬件复位、硬件+内核复位、软件内核/向量复位、上电复位、上电复位并释放端口。
+  如果设备返回超出 0-7 的原始值，界面会显示并保留该值，不会静默修改。
 - `AT Interface`：设置 AT 波特率。
 - 按钮：`Read config`、`Apply config`、`Set baud rate`。
 
-#### Target Chip
+配置页面覆盖 C `S_ATCmdRspWriterCfg` 的全部字段：目标名称、基础设置、脱机设置、
+输出控制和复位引脚输出方式。只读字段遵循 C 代码注释，不允许编辑。
+
+#### Online Operations（在线操作）
 
 - `Connect target`、`Query status`、`Read ID`。
 - `Reset`。
 - `Erase`：`Chip erase`、扇区地址/长度、`Erase sector`。
 - `Read Target Memory`：地址、长度、`Read`、`Save...`。
-- `Write Target Memory`：地址、文件、`Browse...`、校验/写准备选项、`Write`、
-  `Send prepare only`。
+- `Write Target Memory`：文件、`Browse...`、校验/写准备选项、`Write`、
+  `Send prepare only`。选择 `.hex`/`.ihx` 文件时地址输入框会自动禁用，地址来自
+  文件本身，并支持多段 HEX；`.bin`/`.img` 文件仍使用显式地址。
 - `OptionByte`：`Read OB`、`Write vendor default OB`、`Write user OB`。
 - `Factory Test`：`Run factory SRAM firmware`、`Run factory Flash firmware`。
 
-#### Offline Project
+#### Offline Programming（脱机编程）
 
 - `Project Info`：状态、大小、CRC32、`Refresh`。
 - `Load project`：文件、工程名、密码、文件名编码、`Load to writer`、
   `Disable Project`。
-- `Offline Write`：`Start offline write`、`Query status`。
+- `Offline Write`：`Start offline write`、`Query status`、`Stop polling`。
+  启动后 GUI 会自动轮询脱机状态，直到完成、失败或手动停止。
 - `Switch Project (PWX1)`：工程名、密码、重新加载选项、`Switch`。
+  切换成功后会显示成功提示并写入日志。
 
 #### Broadcast
 
@@ -385,12 +417,12 @@ powerwriter_at_gui_python.exe
 
 显示操作和通信日志。`Clear` 清空，`Save log...` 保存到文件。
 
-### 5.3 推荐 GUI 流程
+### 5.4 推荐 GUI 流程
 
 1. 选择 PowerWriter 串口，点击 `Connect`。
-2. 打开 `Offline Project`，选择匹配的 `.pkg`，点击 `Load to writer`，
+2. 打开 `Offline Programming`，选择匹配的 `.pkg`，点击 `Load to writer`，
    再点击 `Refresh`，确认 `Status: Valid`。
-3. 打开 `Target Chip`，点击 `Connect target` 和 `Query status`。
+3. 打开 `Online Operations`，点击 `Connect target` 和 `Query status`。
 4. 按需使用 `Read Target Memory`、`Write Target Memory`、`Erase` 或
    `OptionByte`。
 5. 离线烧录使用 `Offline Write` → `Start offline write`，然后用
@@ -414,13 +446,13 @@ powerwriter_at_gui_python.exe
 
 ![图 2 - Device Config](images/gui_02_device_config.png)
 
-**图 3 - Target Chip（目标芯片）**
+**图 3 - Online Operations（在线操作）**
 
-![图 3 - Target Chip](images/gui_03_target_chip.png)
+![图 3 - Online Operations](images/gui_03_target_chip.png)
 
-**图 4 - Offline Project（离线工程）**
+**图 4 - Offline Programming（脱机编程）**
 
-![图 4 - Offline Project](images/gui_04_offline_project.png)
+![图 4 - Offline Programming](images/gui_04_offline_project.png)
 
 **图 5 - Broadcast（广播）**
 
@@ -462,7 +494,7 @@ Target clock: 10MHz (default)
 
 GUI：
 
-1. 打开 `Offline Project`。
+1. 打开 `Offline Programming`。
 2. 点击 `Browse...`，选择 `stm32f071.pkg`。
 3. 点击 `Load to writer`。
 4. 点击 `Refresh`，确认：
@@ -491,7 +523,7 @@ CRC32   : 0xFAFEF9BE
 
 GUI：
 
-1. 打开 `Target Chip`。
+1. 打开 `Online Operations`。
 2. 点击 `Connect target`。
 3. 点击 `Query status`，状态应显示 `Connected`。
 4. 点击 `Read ID`（示例结果：`1B A0 5A C3`）。
@@ -521,7 +553,7 @@ Chip ID: 1B A0 5A C3
 GUI：
 
 1. 确认工程状态为 `Valid`。
-2. 打开 `Offline Project` -> `Offline Write`。
+2. 打开 `Offline Programming` -> `Offline Write`。
 3. 点击 `Start offline write`。
 4. 点击 `Query status`，等待状态显示完成。
 

@@ -22,7 +22,7 @@ import time
 import traceback
 from pathlib import Path
 import tkinter as tk
-from tkinter import filedialog, messagebox, simpledialog, ttk
+from tkinter import filedialog, font as tkfont, messagebox, simpledialog, ttk
 from tkinter import scrolledtext
 
 from pw_at import (
@@ -54,6 +54,8 @@ from pw_at.demo import (
     run_sample_workflow,
     wait_target_connected,
 )
+from pw_at.hexfile import HexError, parse_intel_hex
+from pw_at.i18n import LANGUAGES, LANGUAGE_NAMES, Translator, save_language
 from pw_at.models import WriterConfig
 from pw_at.transport import list_serial_ports
 from pw_at.utils import hexdump
@@ -75,8 +77,14 @@ LOG_PREFIX = {"debug": "[Debug]", "info": "[Info]", "warn": "[Warn]", "error": "
 
 
 class PowerWriterGui:
-    def __init__(self, root: tk.Tk) -> None:
+    def __init__(self, root: tk.Tk, language: str | None = None,
+                 maximized: bool = True) -> None:
         self.root = root
+        self.translator = Translator(language)
+        self.language_code = self.translator.language
+        self._save_settings = language is None
+        self.language_var = tk.StringVar(
+            value=LANGUAGE_NAMES.get(self.language_code, "English"))
         self.client: PowerWriterAT | None = None
         self.busy = False
         self.queue: "queue.Queue" = queue.Queue()
@@ -84,10 +92,21 @@ class PowerWriterGui:
         self.demo_stop = threading.Event()
         self._last_read: tuple[int, bytes] | None = None
         self._port_map: dict[str, str] = {}
+        self._tab_sources: dict[str, str] = {}
+        self._i18n_combos = []
+        self._conn_template = "Not connected"
+        self._conn_args: tuple = ()
+        self._conn_ok = False
+        self._conn_busy = False
+        self._target_connected: bool | None = None
+        self._target_state = "unknown"
+        self._target_error = ""
+        self._limit_enable_value = False
+        self._proj_active_state: bool | None = None
 
-        root.title("PowerWriter AT Commander (Python) v%s" % __version__)
-        root.geometry("1140x860")
-        root.minsize(1020, 720)
+        root.title(self._t("PowerWriter AT Commander (Python) v%s") % __version__)
+        root.geometry("1440x900")
+        root.minsize(1200, 760)
         style = ttk.Style(root)
         for theme in ("vista", "clam"):
             if theme in style.theme_names():
@@ -100,10 +119,191 @@ class PowerWriterGui:
 
         self._build_vars()
         self._build_ui()
+        self.write_file_var.trace_add("write", self._on_write_file_changed)
+        self._on_write_file_changed()
+        self._apply_language(initial=True)
         self._refresh_ports()
         self._update_conn_buttons()
+        if maximized:
+            self._maximize_window()
         self._poll_after_id = self.root.after(80, self._poll_queue)
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    # ==================================================================
+    # Localization
+    # ==================================================================
+    def _t(self, text: str, *args) -> str:
+        return self.translator.tr(text, *args)
+
+    def _maximize_window(self) -> None:
+        try:
+            self.root.update_idletasks()
+            if sys.platform == "darwin":
+                self.root.state("zoomed")
+            elif sys.platform.startswith("win"):
+                self.root.state("zoomed")
+            else:
+                self.root.attributes("-zoomed", True)
+        except tk.TclError:
+            self.root.geometry("1440x900")
+
+    def _fit_buttons(self) -> None:
+        """Size buttons to their translated text and equalize siblings."""
+        font = tkfont.nametofont("TkDefaultFont")
+        try:
+            style_font = ttk.Style(self.root).lookup("TButton", "font")
+            if style_font:
+                font = tkfont.Font(font=style_font)
+        except Exception:
+            pass
+        zero = max(1, font.measure("0"))
+        groups = {}
+        for widget in self._walk_widgets(self.main):
+            if not isinstance(widget, ttk.Button):
+                continue
+            try:
+                text = widget.cget("text")
+            except tk.TclError:
+                continue
+            if not text:
+                continue
+            needed = (font.measure(text) + zero - 1) // zero + 2
+            groups.setdefault(widget.master, []).append((widget, needed))
+        for items in groups.values():
+            width = max(needed for _widget, needed in items)
+            for widget, _needed in items:
+                try:
+                    widget.configure(width=width)
+                except tk.TclError:
+                    pass
+
+    def _walk_widgets(self, parent):
+        for child in parent.winfo_children():
+            yield child
+            yield from self._walk_widgets(child)
+
+    def _localize_static_widgets(self) -> None:
+        for widget in [self.main, *self._walk_widgets(self.main)]:
+            if getattr(widget, "_i18n_skip", False):
+                continue
+            try:
+                if widget.cget("textvariable"):
+                    continue
+            except tk.TclError:
+                pass
+            try:
+                text = widget.cget("text")
+            except tk.TclError:
+                continue
+            if not text:
+                continue
+            source = getattr(widget, "_i18n_source", None)
+            if source is None:
+                source = text
+                widget._i18n_source = source
+            try:
+                widget.configure(text=self._t(source))
+            except tk.TclError:
+                pass
+
+        for tab_id in self.notebook.tabs():
+            source = self._tab_sources.get(tab_id)
+            if source is None:
+                source = self.notebook.tab(tab_id, "text")
+                self._tab_sources[tab_id] = source
+            self.notebook.tab(tab_id, text=self._t(source))
+
+        for combo, sources in self._i18n_combos:
+            self._localize_combo(combo, sources)
+        self._fit_buttons()
+
+    def _localize_combo(self, combo: ttk.Combobox, sources) -> None:
+        old_values = list(combo["values"])
+        index = combo.current()
+        if index < 0:
+            value = combo.get()
+            try:
+                index = old_values.index(value)
+            except ValueError:
+                index = -1
+        combo["values"] = [self._t(item) for item in sources]
+        if index >= 0:
+            combo.current(index)
+
+    def _apply_language(self, initial: bool = False) -> None:
+        self._localize_static_widgets()
+        self.root.title(self._t("PowerWriter AT Commander (Python) v%s") % __version__)
+        self.status_var.set(
+            self._t("Working...") if self.busy else self._t("Ready"))
+        self._render_conn_status()
+        self._render_target_status()
+        self._render_limit_enable()
+        self._render_project_state()
+        if self.client is not None:
+            self.info_vars["encrypt"].set(
+                self._t("Enabled") if self.client.encrypt else self._t("Disabled"))
+        if self._last_read is None:
+            self.read_info_var.set(self._t("Not read yet"))
+        if initial:
+            self.demo_status_var.set(self._t("Not running"))
+            self.offline_status_var.set(self._t("Not started"))
+        if not initial:
+            self._append_log(
+                "info",
+                self._t("UI language changed to %s.", LANGUAGE_NAMES[self.language_code]))
+
+    def _on_language_change(self, _event=None) -> None:
+        if self.busy:
+            messagebox.showinfo(
+                self._t("Please wait"),
+                self._t("An operation is in progress; cannot change language right now"))
+            self.language_var.set(LANGUAGE_NAMES[self.language_code])
+            return
+        selected = self.language_var.get()
+        code = next((item for item, name in LANGUAGES if name == selected), None)
+        if code is None or code == self.language_code:
+            return
+        self.language_code = code
+        self.translator.set_language(code)
+        if self._save_settings:
+            save_language(code)
+        self._apply_language()
+
+    def _render_conn_status(self) -> None:
+        self.conn_status_var.set(
+            self._t(self._conn_template, *self._conn_args))
+        self.conn_status_label.configure(
+            style="Ok.TLabel" if self._conn_ok
+            else ("Hint.TLabel" if self._conn_busy else "Bad.TLabel"))
+
+    def _render_target_status(self) -> None:
+        if self._target_connected is None:
+            if self._target_state == "sent":
+                self.target_status_var.set(self._t("Connect command sent"))
+                self.target_status_label.configure(style="Hint.TLabel")
+            else:
+                self.target_status_var.set(self._t("Unknown"))
+                self.target_status_label.configure(style="Bad.TLabel")
+            return
+        if self._target_connected:
+            self.target_status_var.set(self._t("Connected"))
+            self.target_status_label.configure(style="Ok.TLabel")
+        else:
+            text = self._t("Not connected")
+            if self._target_error:
+                text += " (%s)" % self._t(self._target_error)
+            self.target_status_var.set(text)
+            self.target_status_label.configure(style="Bad.TLabel")
+
+    def _render_limit_enable(self) -> None:
+        self.cfg_limit_enable.set(
+            self._t("On") if self._limit_enable_value else self._t("Off"))
+
+    def _render_project_state(self) -> None:
+        if self._proj_active_state is None:
+            return
+        self.proj_active_var.set(
+            self._t("Valid") if self._proj_active_state else self._t("Invalid"))
 
     # ==================================================================
     # Variables and UI construction
@@ -142,7 +342,8 @@ class PowerWriterGui:
         self.cfg_run_ap = tk.IntVar()
         self.cfg_power_on = tk.StringVar(value="0")
         self.cfg_power_off = tk.StringVar(value="0")
-        self.cfg_reset_pin = tk.StringVar()
+        self.cfg_reset_pin = tk.StringVar(
+            value=list(RESET_TYPE_LABELS.values())[0])
 
         self.target_status_var = tk.StringVar(value="Unknown")
         self.target_id_var = tk.StringVar(value="-")
@@ -182,8 +383,9 @@ class PowerWriterGui:
         self.status_var = tk.StringVar(value="Ready")
 
     def _build_ui(self) -> None:
-        main = ttk.Frame(self.root, padding=8)
-        main.pack(fill="both", expand=True)
+        self.main = ttk.Frame(self.root, padding=8)
+        self.main.pack(fill="both", expand=True)
+        main = self.main
 
         # ---------------- Connection bar ----------------
         conn = ttk.LabelFrame(main, text="Connection", padding=8)
@@ -209,7 +411,7 @@ class PowerWriterGui:
 
         self.connect_btn = ttk.Button(conn, text="Connect", width=8, command=self._on_connect)
         self.connect_btn.grid(row=0, column=6, padx=(0, 6))
-        self.disconnect_btn = ttk.Button(conn, text="Disconnect", width=8,
+        self.disconnect_btn = ttk.Button(conn, text="Disconnect", width=12,
                                          command=self._on_disconnect)
         self.disconnect_btn.grid(row=0, column=7)
 
@@ -218,12 +420,23 @@ class PowerWriterGui:
             command=self._refresh_ports)
         self.pw_only_chk.grid(row=0, column=8, padx=(12, 0))
 
+        ttk.Label(conn, text="Language:").grid(
+            row=0, column=9, sticky="w", padx=(12, 0))
+        self.language_combo = ttk.Combobox(
+            conn, textvariable=self.language_var,
+            values=[name for _code, name in LANGUAGES],
+            state="readonly", width=20, height=min(24, len(LANGUAGES)))
+        self.language_combo.grid(
+            row=0, column=10, sticky="w", padx=(4, 0))
+        self.language_combo.bind("<<ComboboxSelected>>", self._on_language_change)
+        conn.columnconfigure(11, weight=1)
+
         self.conn_status_label = ttk.Label(conn, textvariable=self.conn_status_var,
                                            style="Bad.TLabel")
-        self.conn_status_label.grid(row=1, column=0, columnspan=9, sticky="w", pady=(8, 0))
+        self.conn_status_label.grid(row=1, column=0, columnspan=11, sticky="w", pady=(8, 0))
         ttk.Label(conn, text="Note: enable AT mode in the PowerWriter device preferences first;"
                              " AES encryption must match the device settings.",
-                  style="Hint.TLabel").grid(row=2, column=0, columnspan=9,
+                  style="Hint.TLabel").grid(row=2, column=0, columnspan=11,
                                             sticky="w", pady=(2, 0))
 
         # ---------------- Feature tabs ----------------
@@ -236,6 +449,16 @@ class PowerWriterGui:
         self._build_project_tab()
         self._build_broadcast_tab()
         self._build_demo_tab()
+
+        self._i18n_combos = [
+            (self.cfg_erase_combo, list(ERASE_TYPE_LABELS.values())),
+            (self.cfg_vext_combo, list(VEXT_LABELS.values())),
+            (self.cfg_clock_combo, list(CLOCK_LABELS.values())),
+            (self.cfg_ob_combo, list(OB_UPDATE_LABELS.values())),
+            (self.cfg_reset_pin_combo, list(RESET_TYPE_LABELS.values())),
+            (self.reset_combo, list(RESET_TYPE_LABELS.values())),
+            (self.broadcast_dir_combo, list(BROADCAST_DIR_LABELS.values())),
+        ]
 
         # ---------------- Log pane ----------------
         log_frame = ttk.LabelFrame(main, text="Log", padding=4)
@@ -311,14 +534,18 @@ class PowerWriterGui:
 
         base = ttk.LabelFrame(left, text="Basic Settings", padding=8)
         base.pack(fill="x", pady=(10, 0))
-        self._config_combo(base, 0, "Erase mode", self.cfg_erase,
-                           list(ERASE_TYPE_LABELS.values()))
-        self._config_combo(base, 1, "Output VEXT", self.cfg_vext,
-                           list(VEXT_LABELS.values()))
-        self._config_combo(base, 2, "Target clock", self.cfg_clock,
-                           list(CLOCK_LABELS.values()))
-        self._config_combo(base, 3, "OptionByte update", self.cfg_ob,
-                           list(OB_UPDATE_LABELS.values()))
+        self.cfg_erase_combo = self._config_combo(
+            base, 0, "Erase mode", self.cfg_erase,
+            list(ERASE_TYPE_LABELS.values()))
+        self.cfg_vext_combo = self._config_combo(
+            base, 1, "Output VEXT", self.cfg_vext,
+            list(VEXT_LABELS.values()))
+        self.cfg_clock_combo = self._config_combo(
+            base, 2, "Target clock", self.cfg_clock,
+            list(CLOCK_LABELS.values()))
+        self.cfg_ob_combo = self._config_combo(
+            base, 3, "OptionByte update", self.cfg_ob,
+            list(OB_UPDATE_LABELS.values()))
         ttk.Label(base, text="Buzzer:").grid(row=4, column=0, sticky="w", pady=4)
         ttk.Checkbutton(base, text="On", variable=self.cfg_buzzer)\
             .grid(row=4, column=1, sticky="w", padx=(12, 0))
@@ -343,7 +570,12 @@ class PowerWriterGui:
             .grid(row=1, column=1, sticky="w", padx=(12, 0))
         self._config_row(output, 2, "Power-on debounce (ms)", self.cfg_power_on)
         self._config_row(output, 3, "Power-off debounce (ms)", self.cfg_power_off)
-        self._config_row(output, 4, "Reset pin control (0-2)", self.cfg_reset_pin)
+        self.cfg_reset_pin_combo = self._config_combo(
+            output, 4, "Reset pin control", self.cfg_reset_pin,
+            list(RESET_TYPE_LABELS.values()))
+        ttk.Label(output, text="Same 0-7 reset modes as Online Operations.",
+                  style="Hint.TLabel", wraplength=360)\
+            .grid(row=5, column=0, columnspan=2, sticky="w")
 
         at_iface = ttk.LabelFrame(right, text="AT Interface", padding=8)
         at_iface.pack(fill="x", pady=(10, 0))
@@ -370,14 +602,16 @@ class PowerWriterGui:
         entry = ttk.Entry(parent, textvariable=var, width=24, state=state)
         entry.grid(row=row, column=1, sticky="w", padx=(12, 0))
 
-    def _config_combo(self, parent, row, label, var, values) -> None:
+    def _config_combo(self, parent, row, label, var, values):
         ttk.Label(parent, text=label + ":").grid(row=row, column=0, sticky="w", pady=4)
-        ttk.Combobox(parent, textvariable=var, values=values, width=30,
-                     state="readonly").grid(row=row, column=1, sticky="w", padx=(12, 0))
+        combo = ttk.Combobox(parent, textvariable=var, values=values, width=30,
+                             state="readonly")
+        combo.grid(row=row, column=1, sticky="w", padx=(12, 0))
+        return combo
 
     def _build_target_tab(self) -> None:
         tab = ttk.Frame(self.notebook, padding=8)
-        self.notebook.add(tab, text="Target Chip")
+        self.notebook.add(tab, text="Online Operations")
         tab.columnconfigure(0, weight=1)
         tab.columnconfigure(1, weight=1)
         tab.rowconfigure(2, weight=1)
@@ -400,9 +634,11 @@ class PowerWriterGui:
 
         reset = ttk.LabelFrame(tab, text="Reset", padding=8)
         reset.grid(row=1, column=0, sticky="ew", padx=(0, 4), pady=(0, 8))
-        ttk.Combobox(reset, textvariable=self.reset_type_var,
-                     values=list(RESET_TYPE_LABELS.values()), state="readonly",
-                     width=30).pack(side="left", padx=(0, 8))
+        self.reset_combo = ttk.Combobox(
+            reset, textvariable=self.reset_type_var,
+            values=list(RESET_TYPE_LABELS.values()), state="readonly",
+            width=30)
+        self.reset_combo.pack(side="left", padx=(0, 8))
         ttk.Button(reset, text="Reset", command=self._target_reset).pack(side="left")
 
         erase = ttk.LabelFrame(tab, text="Erase", padding=8)
@@ -438,8 +674,9 @@ class PowerWriterGui:
         write.grid(row=2, column=1, sticky="nsew", padx=(4, 0))
         write.columnconfigure(1, weight=1)
         ttk.Label(write, text="Address:").grid(row=0, column=0, sticky="w")
-        ttk.Entry(write, textvariable=self.write_addr_var, width=16)\
-            .grid(row=0, column=1, sticky="w", padx=(4, 0))
+        self.write_addr_entry = ttk.Entry(
+            write, textvariable=self.write_addr_var, width=16)
+        self.write_addr_entry.grid(row=0, column=1, sticky="w", padx=(4, 0))
         ttk.Label(write, text="File:").grid(row=1, column=0, sticky="w", pady=4)
         ttk.Entry(write, textvariable=self.write_file_var, width=34)\
             .grid(row=1, column=1, sticky="ew", padx=(4, 0))
@@ -470,6 +707,7 @@ class PowerWriterGui:
         ttk.Button(ob, text="Write user OB", command=self._write_user_ob)\
             .grid(row=0, column=2, padx=(0, 12))
         self.ob_label = ttk.Label(ob, text="-", font=("Consolas", 9), wraplength=700)
+        self.ob_label._i18n_skip = True
         self.ob_label.grid(row=0, column=3, sticky="w")
 
         factory = ttk.LabelFrame(tab, text="Factory Test", padding=8)
@@ -483,7 +721,7 @@ class PowerWriterGui:
 
     def _build_project_tab(self) -> None:
         tab = ttk.Frame(self.notebook, padding=12)
-        self.notebook.add(tab, text="Offline Project")
+        self.notebook.add(tab, text="Offline Programming")
         tab.columnconfigure(0, weight=1)
         tab.columnconfigure(1, weight=1)
 
@@ -531,12 +769,14 @@ class PowerWriterGui:
         offline = ttk.LabelFrame(tab, text="Offline Write", padding=8)
         offline.grid(row=1, column=1, sticky="nsew", padx=(6, 0), pady=(10, 0))
         offline.columnconfigure(0, weight=1)
-        ttk.Label(offline, text="After starting an offline write, use 'Query status' to check progress.",
+        ttk.Label(offline, text="Offline status is polled automatically after starting; you can also query manually.",
                   style="Hint.TLabel").grid(row=0, column=0, columnspan=3, sticky="w")
         ttk.Button(offline, text="Start offline write", command=self._offline_start)\
             .grid(row=1, column=0, sticky="w", pady=(8, 0))
         ttk.Button(offline, text="Query status", command=self._offline_query)\
             .grid(row=1, column=1, sticky="w", padx=(8, 0), pady=(8, 0))
+        ttk.Button(offline, text="Stop polling", command=self._offline_stop_clicked)\
+            .grid(row=1, column=2, sticky="w", padx=(8, 0), pady=(8, 0))
         ttk.Label(offline, textvariable=self.offline_status_var)\
             .grid(row=2, column=0, columnspan=3, sticky="w", pady=(8, 2))
         self.offline_progress = ttk.Progressbar(offline, mode="determinate")
@@ -566,9 +806,11 @@ class PowerWriterGui:
         controls = ttk.Frame(tab)
         controls.grid(row=0, column=0, sticky="ew")
         ttk.Label(controls, text="Direction:").pack(side="left")
-        ttk.Combobox(controls, textvariable=self.broadcast_dir_var,
-                     values=list(BROADCAST_DIR_LABELS.values()), state="readonly",
-                     width=20).pack(side="left", padx=(4, 12))
+        self.broadcast_dir_combo = ttk.Combobox(
+            controls, textvariable=self.broadcast_dir_var,
+            values=list(BROADCAST_DIR_LABELS.values()), state="readonly",
+            width=20)
+        self.broadcast_dir_combo.pack(side="left", padx=(4, 12))
         ttk.Checkbutton(controls, text="Hex input", variable=self.broadcast_hex_var)\
             .pack(side="left", padx=(0, 12))
         ttk.Checkbutton(controls, text="Keep full AT frame", variable=self.broadcast_keep_var)\
@@ -651,8 +893,9 @@ class PowerWriterGui:
 
     def _append_log(self, level: str, message: str) -> None:
         tag = LOG_TAGS.get(level, ("info", "#1a1a1a"))[0]
-        line = "[%s] %s %s\n" % (time.strftime("%H:%M:%S"),
-                                 LOG_PREFIX.get(level, ""), message)
+        prefix = self._t(LOG_PREFIX.get(level, ""))
+        message = self._t(message)
+        line = "[%s] %s %s\n" % (time.strftime("%H:%M:%S"), prefix, message)
         self.log_text.configure(state="normal")
         self.log_text.insert("end", line, tag)
         self.log_text.see("end")
@@ -665,25 +908,36 @@ class PowerWriterGui:
 
     def _save_log(self) -> None:
         path = filedialog.asksaveasfilename(
-            title="Save log", defaultextension=".log",
-            filetypes=[("Log files", "*.log"), ("Text files", "*.txt"), ("All files", "*.*")],
+            title=self._t("Save log"), defaultextension=".log",
+            filetypes=[
+                (self._t("Log files"), "*.log"),
+                (self._t("Text files"), "*.txt"),
+                (self._t("All files"), "*.*"),
+            ],
         )
         if not path:
             return
         Path(path).write_text(self.log_text.get("1.0", "end"), encoding="utf-8")
-        self._append_log("info", "Log saved to %s" % path)
+        self._append_log("info", self._t("Log saved to %s", path))
 
     def _set_busy(self, busy: bool, text: str = "") -> None:
         self.busy = busy
-        self.status_var.set(text or ("Working..." if busy else "Ready"))
+        if text:
+            self.status_var.set(self._t(text))
+        else:
+            self.status_var.set(self._t("Working..." if busy else "Ready"))
         self._update_conn_buttons()
 
     def _run(self, task) -> None:
         if self.client is None or not self.client.is_open:
-            messagebox.showwarning("Not connected", "Connect the PowerWriter device first")
+            messagebox.showwarning(
+                self._t("Not connected"),
+                self._t("Connect the PowerWriter device first"))
             return
         if self.busy:
-            messagebox.showinfo("Please wait", "The previous operation has not finished")
+            messagebox.showinfo(
+                self._t("Please wait"),
+                self._t("The previous operation has not finished"))
             return
 
         self._set_busy(True)
@@ -701,7 +955,7 @@ class PowerWriterGui:
 
     def _show_error(self, exc: Exception) -> None:
         self._append_log("error", str(exc))
-        messagebox.showerror("Operation failed", str(exc))
+        messagebox.showerror(self._t("Operation failed"), str(exc))
 
     def _update_conn_buttons(self) -> None:
         connected = bool(self.client is not None and self.client.is_open)
@@ -714,11 +968,17 @@ class PowerWriterGui:
             widget.configure(state="disabled" if connected else "normal")
         if not connected:
             self.baud_combo.configure(state="normal")
+        if hasattr(self, "language_combo"):
+            self.language_combo.configure(
+                state="disabled" if self.busy else "readonly")
 
-    def _set_conn_status(self, text: str, ok: bool = False, busy: bool = False) -> None:
-        self.conn_status_var.set(text)
-        self.conn_status_label.configure(
-            style="Ok.TLabel" if ok else ("Hint.TLabel" if busy else "Bad.TLabel"))
+    def _set_conn_status(self, template: str, *args, ok: bool = False,
+                         busy: bool = False) -> None:
+        self._conn_template = template
+        self._conn_args = args
+        self._conn_ok = ok
+        self._conn_busy = busy
+        self._render_conn_status()
 
     # ==================================================================
     # Connect / disconnect
@@ -730,7 +990,7 @@ class PowerWriterGui:
 
         if not all_ports:
             self._port_map = {}
-            self.port_combo["values"] = ["No serial port found"]
+            self.port_combo["values"] = [self._t("No serial port found")]
             self._append_log("warn", "No serial port found")
             return
 
@@ -748,31 +1008,36 @@ class PowerWriterGui:
         if self.port_var.get() not in self._port_map:
             self.port_var.set(str(preferred))
 
+        filtered = (self._t(" (filtered display)")
+                    if only_powerwriter and powerwriter_ports else "")
         self._append_log(
             "info",
-            "Found %d serial port(s), %d PowerWriter%s"
-            % (len(all_ports), len(powerwriter_ports),
-               " (filtered display)" if only_powerwriter and powerwriter_ports else ""))
+            self._t("Found %d serial port(s), %d PowerWriter%s",
+                    len(all_ports), len(powerwriter_ports), filtered))
 
     def _on_connect(self) -> None:
         if self.busy:
             return
         text = self.port_var.get().strip()
         if not text:
-            messagebox.showwarning("No serial port selected", "Select a serial port")
+            messagebox.showwarning(
+                self._t("No serial port selected"),
+                self._t("Select a serial port"))
             return
         port = self._port_map.get(text, text)
         try:
             baud = int(self.baud_var.get())
         except ValueError:
-            messagebox.showerror("Invalid parameter", "Baud rate must be an integer")
+            messagebox.showerror(
+                self._t("Invalid parameter"),
+                self._t("Baud rate must be an integer"))
             return
 
         encrypt = bool(self.encrypt_var.get())
         self._set_busy(True, "Connecting...")
-        self._set_conn_status("Connecting to %s ..." % port, busy=True)
+        self._set_conn_status("Connecting to %s ...", port, busy=True)
         client = PowerWriterAT(encrypt=encrypt, log=self._log_cb)
-        self._append_log("info", "Connecting to %s @ %d ..." % (port, baud))
+        self._append_log("info", self._t("Connecting to %s @ %d ...", port, baud))
 
         def worker():
             try:
@@ -804,22 +1069,28 @@ class PowerWriterGui:
         if cfg is not None:
             self._apply_config(cfg)
         if config_error is not None:
-            self._append_log("warn", "Failed to read config (connection unaffected): %s" % config_error)
-        self._set_conn_status("Connected: %s (%s)" % (client.port, info.oem or "PowerWriter"),
-                              ok=True)
+            self._append_log(
+                "warn",
+                self._t("Failed to read config (connection unaffected): %s",
+                        config_error))
+        self._set_conn_status(
+            "Connected: %s (%s)", client.port,
+            info.oem or "PowerWriter", ok=True)
         self._set_busy(False, "Ready")
-        self._append_log("info", "Connected successfully: %s" % info)
+        self._append_log("info", self._t("Connected successfully: %s", info))
 
     def _connect_failed(self, exc) -> None:
         self.client = None
         self._set_busy(False, "Ready")
         self._set_conn_status("Not connected")
-        self._append_log("error", "Connection failed: %s" % exc)
-        messagebox.showerror("Connection failed", str(exc))
+        self._append_log("error", self._t("Connection failed: %s", exc))
+        messagebox.showerror(self._t("Connection failed"), str(exc))
 
     def _on_disconnect(self) -> None:
         if self.busy:
-            messagebox.showinfo("Please wait", "An operation is in progress; cannot disconnect right now")
+            messagebox.showinfo(
+                self._t("Please wait"),
+                self._t("An operation is in progress; cannot disconnect right now"))
             return
         if self.client is not None:
             self.client.close()
@@ -839,7 +1110,7 @@ class PowerWriterGui:
                 cfg = self.client.get_writer_config()
             except PowerWriterATError as exc:
                 self._post(lambda e=exc: self._append_log(
-                    "warn", "Failed to read config: %s" % e))
+                    "warn", self._t("Failed to read config: %s", e)))
                 return
             self._post(lambda: self._apply_config(cfg))
         self._run(task)
@@ -853,22 +1124,28 @@ class PowerWriterGui:
         if self.client is not None:
             self.info_vars["lib"].set("%s (ABI 0x%08X)" % (
                 self.client.library_path or "-", self.client.library_version))
-            self.info_vars["encrypt"].set("Enabled" if self.client.encrypt else "Disabled")
+            self.info_vars["encrypt"].set(
+                self._t("Enabled") if self.client.encrypt else self._t("Disabled"))
 
     def _show_about(self) -> None:
         extra = ""
         if self.client is not None:
-            extra = ("\n\nBound library: %s\nABI version: 0x%08X\nAT encryption: %s"
-                     % (self.client.library_path or "-",
+            extra = ("\n\n%s: %s\n%s: 0x%08X\n%s: %s"
+                     % (self._t("Bound library"),
+                        self.client.library_path or "-",
+                        self._t("ABI version"),
                         self.client.library_version,
-                        "Enabled" if self.client.encrypt else "Disabled"))
-        messagebox.showinfo("About PowerWriter AT Commander",
-                            INTRODUCTION + extra)
+                        self._t("AT encryption"),
+                        self._t("Enabled") if self.client.encrypt
+                        else self._t("Disabled")))
+        messagebox.showinfo(
+            self._t("About PowerWriter AT Commander"),
+            INTRODUCTION + extra)
 
     def _apply_config(self, cfg: WriterConfig) -> None:
         def label(mapping, enum_cls, value):
             try:
-                return mapping[enum_cls(value)]
+                return self._t(mapping[enum_cls(value)])
             except (ValueError, KeyError):
                 return str(value)
 
@@ -880,7 +1157,8 @@ class PowerWriterGui:
         self.cfg_clock.set(label(CLOCK_LABELS, ClockType, cfg.clock_type))
         self.cfg_ob.set(label(OB_UPDATE_LABELS, OBUpdateType, cfg.ob_update_type))
         self.cfg_buzzer.set(1 if cfg.buzzer_enable else 0)
-        self.cfg_limit_enable.set("On" if cfg.limit_number_enable else "Off")
+        self._limit_enable_value = bool(cfg.limit_number_enable)
+        self._render_limit_enable()
         self.cfg_limit_number.set(str(cfg.limit_number))
         self.cfg_auto.set(1 if cfg.target_auto_enable else 0)
         self.cfg_in_debounce.set(str(cfg.target_auto_in_debounce))
@@ -889,7 +1167,20 @@ class PowerWriterGui:
         self.cfg_run_ap.set(1 if cfg.run_ap else 0)
         self.cfg_power_on.set(str(cfg.power_on_debounce))
         self.cfg_power_off.set(str(cfg.power_off_debounce))
-        self.cfg_reset_pin.set(str(cfg.reset_type))
+        try:
+            reset_label = self._t(RESET_TYPE_LABELS[ResetType(cfg.reset_type)])
+            self.cfg_reset_pin_combo["values"] = [
+                self._t(label) for label in RESET_TYPE_LABELS.values()]
+            self.cfg_reset_pin.set(reset_label)
+        except (ValueError, KeyError):
+            reset_pin = str(cfg.reset_type)
+            self.cfg_reset_pin_combo["values"] = [
+                self._t(label) for label in RESET_TYPE_LABELS.values()
+            ] + [reset_pin]
+            self.cfg_reset_pin.set(reset_pin)
+            self._append_log(
+                "warn",
+                self._t("Unsupported reset pin control value: %s", reset_pin))
 
     def _read_config(self) -> None:
         def task():
@@ -897,23 +1188,46 @@ class PowerWriterGui:
             self._post(lambda: self._apply_config(cfg))
         self._run(task)
 
+    def _translated_value_map(self, mapping) -> dict:
+        return {self._t(label): int(value) for value, label in mapping.items()}
+
     def _collect_int(self, var: tk.StringVar, name: str, maximum: int = 0xFFFF) -> int:
         try:
             value = int(var.get(), 0)
         except ValueError:
-            raise ValueError("%s must be an integer" % name)
+            raise ValueError(self._t("%s must be an integer", self._t(name)))
         if value < 0 or value > maximum:
-            raise ValueError("%s must be between 0 and %d" % (name, maximum))
+            raise ValueError(
+                self._t("%s must be between 0 and %d",
+                        self._t(name), maximum))
         return value
 
     def _collect_config(self) -> WriterConfig:
         try:
-            erase = ERASE_BY_LABEL[self.cfg_erase.get()]
-            vext = VEXT_BY_LABEL[self.cfg_vext.get()]
-            clock = CLOCK_BY_LABEL[self.cfg_clock.get()]
-            ob = OB_BY_LABEL[self.cfg_ob.get()]
+            erase = self._translated_value_map(ERASE_TYPE_LABELS)[
+                self.cfg_erase.get()]
+            vext = self._translated_value_map(VEXT_LABELS)[
+                self.cfg_vext.get()]
+            clock = self._translated_value_map(CLOCK_LABELS)[
+                self.cfg_clock.get()]
+            ob = self._translated_value_map(OB_UPDATE_LABELS)[
+                self.cfg_ob.get()]
         except KeyError as exc:
-            raise ValueError("Invalid configuration item: %s" % exc)
+            raise ValueError(self._t("Invalid configuration item: %s", exc))
+        reset_label = self.cfg_reset_pin.get()
+        try:
+            reset_type = self._translated_value_map(RESET_TYPE_LABELS)[
+                reset_label]
+        except KeyError:
+            try:
+                reset_type = int(reset_label, 0)
+            except ValueError:
+                raise ValueError(self._t(
+                    "Invalid configuration item: %s", reset_label)) from None
+            if not 0 <= reset_type <= 0xFF:
+                raise ValueError(self._t(
+                    "%s must be between 0 and %d",
+                    self._t("reset pin control"), 0xFF))
         return WriterConfig(
             target_vendor=self.cfg_vendor.get(),
             target_series=self.cfg_series.get(),
@@ -923,68 +1237,86 @@ class PowerWriterGui:
             clock_type=clock,
             buzzer_enable=1 if self.cfg_buzzer.get() else 0,
             ob_update_type=ob,
-            limit_number_enable=1 if self.cfg_limit_enable.get() == "On" else 0,
+            limit_number_enable=1 if self.cfg_limit_enable.get() == self._t("On") else 0,
             limit_number=int(self.cfg_limit_number.get() or 0),
             target_auto_enable=1 if self.cfg_auto.get() else 0,
-            target_auto_in_debounce=self._collect_int(self.cfg_in_debounce, "insertion debounce"),
-            target_auto_out_debounce=self._collect_int(self.cfg_out_debounce, "removal debounce"),
+            target_auto_in_debounce=self._collect_int(
+                self.cfg_in_debounce, "insertion debounce"),
+            target_auto_out_debounce=self._collect_int(
+                self.cfg_out_debounce, "removal debounce"),
             disable_power_ap=1 if self.cfg_disable_power.get() else 0,
             run_ap=1 if self.cfg_run_ap.get() else 0,
-            power_on_debounce=self._collect_int(self.cfg_power_on, "power-on debounce"),
-            power_off_debounce=self._collect_int(self.cfg_power_off, "power-off debounce"),
-            reset_type=self._collect_int(self.cfg_reset_pin, "reset pin control", 2),
+            power_on_debounce=self._collect_int(
+                self.cfg_power_on, "power-on debounce"),
+            power_off_debounce=self._collect_int(
+                self.cfg_power_off, "power-off debounce"),
+            reset_type=reset_type,
         )
 
     def _write_config(self) -> None:
         if self.client is None or not self.client.is_open:
-            messagebox.showwarning("Not connected", "Connect the PowerWriter device first")
+            messagebox.showwarning(
+                self._t("Not connected"),
+                self._t("Connect the PowerWriter device first"))
             return
         try:
             cfg = self._collect_config()
         except ValueError as exc:
-            messagebox.showerror("Invalid parameter", str(exc))
+            messagebox.showerror(self._t("Invalid parameter"), str(exc))
             return
 
         def task():
             self.client.set_writer_config(cfg)
             new_cfg = self.client.get_writer_config()
             self._post(lambda: self._apply_config(new_cfg))
-            self._post(lambda: self._append_log("info", "Configuration updated"))
+            self._post(lambda: self._append_log(
+                "info", "Configuration updated"))
         self._run(task)
 
     def _set_baud(self) -> None:
         if self.client is None or not self.client.is_open:
-            messagebox.showwarning("Not connected", "Connect the PowerWriter device first")
+            messagebox.showwarning(
+                self._t("Not connected"),
+                self._t("Connect the PowerWriter device first"))
             return
         try:
             baud = int(self.new_baud_var.get())
         except ValueError:
-            messagebox.showerror("Invalid parameter", "AT baud rate must be an integer")
+            messagebox.showerror(
+                self._t("Invalid parameter"),
+                self._t("AT baud rate must be an integer"))
             return
 
         def task():
             self.client.set_baudrate(baud)
             self._post(lambda: self.baud_var.set(str(baud)))
             self._post(lambda: self._append_log(
-                "info", "AT baud rate switched to %d; host serial port synchronized" % baud))
+                "info",
+                self._t("AT baud rate switched to %d; host serial port synchronized",
+                        baud)))
         self._run(task)
 
     # ==================================================================
     # Target chip
     # ==================================================================
     def _set_target_status(self, connected: bool, error: str = "") -> None:
-        if connected:
-            self.target_status_var.set("Connected")
-            self.target_status_label.configure(style="Ok.TLabel")
-        else:
-            self.target_status_var.set("Not connected" + (" (%s)" % error if error else ""))
-            self.target_status_label.configure(style="Bad.TLabel")
+        self._target_connected = connected
+        self._target_error = error or ""
+        self._target_state = "connected" if connected else "disconnected"
+        self._render_target_status()
 
     def _target_connect(self) -> None:
         def task():
             self.client.target_connect()
-            self._post(lambda: self.target_status_var.set("Connect command sent"))
+            self._post(self._show_connect_sent)
+
         self._run(task)
+
+    def _show_connect_sent(self) -> None:
+        self._target_connected = None
+        self._target_state = "sent"
+        self._target_error = ""
+        self._render_target_status()
 
     def _target_status(self) -> None:
         def task():
@@ -1000,31 +1332,39 @@ class PowerWriterGui:
         self._run(task)
 
     def _target_reset(self) -> None:
-        reset_type = RESET_BY_LABEL.get(self.reset_type_var.get(), ResetType.HW_CORE_RESET)
+        reset_by_label = self._translated_value_map(RESET_TYPE_LABELS)
+        reset_type = reset_by_label.get(
+            self.reset_type_var.get(), ResetType.HW_CORE_RESET)
 
         def task():
             self.client.target_reset(reset_type)
-            self._post(lambda: self._set_target_status(False, "Reconnect required after reset"))
+            self._post(lambda: self._set_target_status(
+                False, "Reconnect required after reset"))
         self._run(task)
 
     def _parse_target_int(self, var: tk.StringVar, name: str) -> int:
         try:
             return int(var.get(), 0)
         except ValueError:
-            raise ValueError("%s must be an integer (0x prefix supported)" % name)
+            raise ValueError(self._t(
+                "%s must be an integer (0x prefix supported)", self._t(name)))
 
     def _read_memory(self) -> None:
         if self.client is None or not self.client.is_open:
-            messagebox.showwarning("Not connected", "Connect the PowerWriter device first")
+            messagebox.showwarning(
+                self._t("Not connected"),
+                self._t("Connect the PowerWriter device first"))
             return
         try:
             address = self._parse_target_int(self.read_addr_var, "address")
             size = self._parse_target_int(self.read_size_var, "length")
         except ValueError as exc:
-            messagebox.showerror("Invalid parameter", str(exc))
+            messagebox.showerror(self._t("Invalid parameter"), str(exc))
             return
         if size <= 0:
-            messagebox.showerror("Invalid parameter", "Length must be greater than 0")
+            messagebox.showerror(
+                self._t("Invalid parameter"),
+                self._t("Length must be greater than 0"))
             return
 
         def progress(processed, total):
@@ -1044,7 +1384,8 @@ class PowerWriterGui:
         display = data[:limit]
         text = hexdump(display, address)
         if len(data) > limit:
-            text += "\n... showing first %d bytes only (of %d bytes); save to a file for the full content" % (
+            text += "\n" + self._t(
+                "... showing first %d bytes only (of %d bytes); save to a file for the full content",
                 limit, len(data))
         self.read_text.configure(state="normal")
         self.read_text.delete("1.0", "end")
@@ -1054,149 +1395,250 @@ class PowerWriterGui:
 
     def _save_memory(self) -> None:
         if not self._last_read:
-            messagebox.showinfo("No data", "Read the target memory first")
+            messagebox.showinfo(
+                self._t("No data"),
+                self._t("Read the target memory first"))
             return
         address, data = self._last_read
         path = filedialog.asksaveasfilename(
-            title="Save target memory", defaultextension=".bin",
+            title=self._t("Save target memory"), defaultextension=".bin",
             initialfile="memory_%08X.bin" % address,
-            filetypes=[("Binary files", "*.bin"), ("All files", "*.*")],
+            filetypes=[
+                (self._t("Binary files"), "*.bin"),
+                (self._t("All files"), "*.*"),
+            ],
         )
         if path:
             Path(path).write_bytes(data)
-            self._append_log("info", "Saved %d bytes to %s" % (len(data), path))
+            self._append_log(
+                "info", self._t("Saved %d bytes to %s", len(data), path))
+
+    def _on_write_file_changed(self, *_args) -> None:
+        if not hasattr(self, "write_addr_entry"):
+            return
+        suffix = Path(self.write_file_var.get()).suffix.lower()
+        self.write_addr_entry.configure(
+            state="disabled" if suffix in (".hex", ".ihx") else "normal")
 
     def _browse_write_file(self) -> None:
         path = filedialog.askopenfilename(
-            title="Select a file to write",
-            filetypes=[("Binary files", "*.bin *.hex *.img"), ("All files", "*.*")],
+            title=self._t("Select a file to write"),
+            filetypes=[
+                (self._t("HEX files"), "*.hex *.ihx"),
+                (self._t("Binary files"), "*.bin *.img"),
+                (self._t("All files"), "*.*"),
+            ],
         )
         if path:
             self.write_file_var.set(path)
 
     def _write_memory(self) -> None:
         if self.client is None or not self.client.is_open:
-            messagebox.showwarning("Not connected", "Connect the PowerWriter device first")
-            return
-        try:
-            address = self._parse_target_int(self.write_addr_var, "address")
-        except ValueError as exc:
-            messagebox.showerror("Invalid parameter", str(exc))
+            messagebox.showwarning(
+                self._t("Not connected"),
+                self._t("Connect the PowerWriter device first"))
             return
         path = Path(self.write_file_var.get())
         if not path.is_file():
-            messagebox.showerror("File error", "Select a valid file")
+            messagebox.showerror(
+                self._t("File error"),
+                self._t("Select a valid file"))
             return
-        data = path.read_bytes()
-        if not data:
-            messagebox.showerror("File error", "File is empty")
-            return
-        if not messagebox.askyesno(
-                "Confirm write",
-                "About to write to 0x%08X, %d bytes; target chip data will be modified.\nContinue?"
-                % (address, len(data))):
+
+        is_hex = path.suffix.lower() in (".hex", ".ihx")
+        if is_hex:
+            try:
+                image = parse_intel_hex(path)
+            except (OSError, HexError) as exc:
+                messagebox.showerror(
+                    self._t("File error"),
+                    self._t("Invalid HEX file: %s", exc))
+                return
+            segments = image.segments
+            total = image.total_size
+            if not total:
+                messagebox.showerror(
+                    self._t("File error"),
+                    self._t("File is empty"))
+                return
+            confirm_text = self._t(
+                "HEX file contains %d segment(s), %d bytes; addresses are taken from the file.\nContinue?",
+                len(segments), total)
+        else:
+            try:
+                address = self._parse_target_int(self.write_addr_var, "address")
+            except ValueError as exc:
+                messagebox.showerror(self._t("Invalid parameter"), str(exc))
+                return
+            data = path.read_bytes()
+            if not data:
+                messagebox.showerror(
+                    self._t("File error"),
+                    self._t("File is empty"))
+                return
+            segments = [(address, data)]
+            total = len(data)
+            confirm_text = self._t(
+                "About to write to 0x%08X, %d bytes; target chip data will be modified.\nContinue?",
+                address, total)
+
+        if not messagebox.askyesno(self._t("Confirm write"), confirm_text):
             return
 
         verify = bool(self.write_verify_var.get())
-
-        def progress(processed, total):
-            self._post(lambda p=processed, t=total: self._set_progress(
-                self.write_progress, self.write_status_var, "Write", p, t))
-
         prepare = bool(self.write_prepare_var.get())
 
+        def progress_for(base):
+            def progress(processed, segment_total):
+                self._post(lambda p=base + processed, t=total: self._set_progress(
+                    self.write_progress, self.write_status_var, "Write", p, t))
+            return progress
+
         def task():
-            self.client.target_write(address, data, prepare=prepare, progress=progress)
+            if prepare:
+                self.client.target_write_prepare(total)
+            written = 0
+            for segment_address, segment_data in segments:
+                self.client.target_write(
+                    segment_address, segment_data, prepare=False,
+                    progress=progress_for(written))
+                written += len(segment_data)
             self._post(lambda: self._set_progress(
-                self.write_progress, self.write_status_var, "Write", len(data), len(data)))
+                self.write_progress, self.write_status_var,
+                "Write", total, total))
             if verify:
-                self._post(lambda: self.write_status_var.set("Verifying..."))
-                readback = self.client.target_read(address, len(data))
-                if readback != data:
-                    offset = next((i for i, (a, b) in enumerate(zip(readback, data))
-                                   if a != b), 0)
-                    raise PowerWriterATError(
-                        ATError.TARGET_WRITE,
-                        "Verification failed: data mismatch at offset 0x%X" % offset)
                 self._post(lambda: self.write_status_var.set(
-                    "Write and verify passed (%d bytes)" % len(data)))
+                    self._t("Verifying...")))
+                for segment_address, segment_data in segments:
+                    readback = self.client.target_read(
+                        segment_address, len(segment_data))
+                    if readback != segment_data:
+                        offset = next(
+                            (i for i, (a, b) in enumerate(
+                                zip(readback, segment_data)) if a != b),
+                            0)
+                        raise PowerWriterATError(
+                            ATError.TARGET_WRITE,
+                            self._t(
+                                "Verification failed: data mismatch at offset 0x%X",
+                                segment_address + offset))
+                self._post(lambda: self.write_status_var.set(
+                    self._t("Write and verify passed (%d bytes)", total)))
             else:
                 self._post(lambda: self.write_status_var.set(
-                    "Write completed (%d bytes)" % len(data)))
+                    self._t("Write completed (%d bytes)", total)))
+            if is_hex:
+                self._post(lambda: self._append_log(
+                    "info",
+                    self._t("Write complete: %d segment(s), %d bytes",
+                            len(segments), total)))
 
-        self._set_progress(self.write_progress, self.write_status_var, "Write", 0, len(data))
+        self._set_progress(
+            self.write_progress, self.write_status_var, "Write", 0, total)
         self._run(task)
 
     def _write_prepare_only(self) -> None:
         if self.client is None or not self.client.is_open:
-            messagebox.showwarning("Not connected", "Connect the PowerWriter device first")
+            messagebox.showwarning(
+                self._t("Not connected"),
+                self._t("Connect the PowerWriter device first"))
             return
         initial = 1
         path = Path(self.write_file_var.get())
         if path.is_file():
-            initial = max(1, path.stat().st_size)
+            if path.suffix.lower() in (".hex", ".ihx"):
+                try:
+                    initial = max(1, parse_intel_hex(path).total_size)
+                except (OSError, HexError) as exc:
+                    messagebox.showerror(
+                        self._t("File error"),
+                        self._t("Invalid HEX file: %s", exc))
+                    return
+            else:
+                initial = max(1, path.stat().st_size)
         total = simpledialog.askinteger(
-            "Send write prepare", "Total number of bytes to write:", minvalue=1,
-            initialvalue=initial, parent=self.root)
+            self._t("Send write prepare"),
+            self._t("Total number of bytes to write:"),
+            minvalue=1, initialvalue=initial, parent=self.root)
         if total is None:
             return
-        self.write_status_var.set("Sending write prepare...")
+        self.write_status_var.set(self._t("Sending write prepare..."))
         self._run(lambda: self.client.target_write_prepare(total))
 
     def _erase_chip(self) -> None:
         if self.client is None or not self.client.is_open:
-            messagebox.showwarning("Not connected", "Connect the PowerWriter device first")
+            messagebox.showwarning(
+                self._t("Not connected"),
+                self._t("Connect the PowerWriter device first"))
             return
-        if not messagebox.askyesno("Confirm erase", "This performs a full chip erase; target chip data will be lost.\nContinue?"):
+        if not messagebox.askyesno(
+                self._t("Confirm erase"),
+                self._t("This performs a full chip erase; target chip data will be lost.\nContinue?")):
             return
         self._run(lambda: self.client.target_erase(10000))
 
     def _erase_sector(self) -> None:
         if self.client is None or not self.client.is_open:
-            messagebox.showwarning("Not connected", "Connect the PowerWriter device first")
+            messagebox.showwarning(
+                self._t("Not connected"),
+                self._t("Connect the PowerWriter device first"))
             return
         try:
             address = self._parse_target_int(self.erase_addr_var, "sector address")
             size = self._parse_target_int(self.erase_size_var, "sector length")
         except ValueError as exc:
-            messagebox.showerror("Invalid parameter", str(exc))
+            messagebox.showerror(self._t("Invalid parameter"), str(exc))
             return
         if not messagebox.askyesno(
-                "Confirm erase", "About to erase the sector at 0x%08X, 0x%X bytes.\nContinue?" % (address, size)):
+                self._t("Confirm erase"),
+                self._t("About to erase the sector at 0x%08X, 0x%X bytes.\nContinue?",
+                        address, size)):
             return
         self._run(lambda: self.client.target_erase_sector(address, size, 10000))
 
     def _read_ob(self) -> None:
         def task():
             ob = self.client.target_read_ob()
-            text = "%d bytes: %s" % (len(ob.data),
-                                    " ".join("%02X" % b for b in ob.data))
+            text = self._t("%d bytes: %s", len(ob.data),
+                           " ".join("%02X" % b for b in ob.data))
             self._post(lambda t=text: self.ob_label.configure(text=t))
         self._run(task)
 
     def _write_vendor_ob(self) -> None:
-        if not messagebox.askyesno("Confirm", "About to write the vendor default OptionByte. Continue?"):
+        if not messagebox.askyesno(
+                self._t("Confirm"),
+                self._t("About to write the vendor default OptionByte. Continue?")):
             return
         self._run(lambda: self.client.target_write_vendor_ob())
 
     def _write_user_ob(self) -> None:
-        if not messagebox.askyesno("Confirm", "About to write the user OptionByte. Continue?"):
+        if not messagebox.askyesno(
+                self._t("Confirm"),
+                self._t("About to write the user OptionByte. Continue?")):
             return
         self._run(lambda: self.client.target_write_user_ob())
 
     def _factory_sram(self) -> None:
         if self.client is None or not self.client.is_open:
-            messagebox.showwarning("Not connected", "Connect the PowerWriter device first")
+            messagebox.showwarning(
+                self._t("Not connected"),
+                self._t("Connect the PowerWriter device first"))
             return
-        if not messagebox.askyesno("Confirm", "About to run the factory SRAM firmware. Continue?"):
+        if not messagebox.askyesno(
+                self._t("Confirm"),
+                self._t("About to run the factory SRAM firmware. Continue?")):
             return
         self._run(lambda: self.client.factory_run_sram_fw())
 
     def _factory_flash(self) -> None:
         if self.client is None or not self.client.is_open:
-            messagebox.showwarning("Not connected", "Connect the PowerWriter device first")
+            messagebox.showwarning(
+                self._t("Not connected"),
+                self._t("Connect the PowerWriter device first"))
             return
-        if not messagebox.askyesno("Confirm", "About to run the factory Flash firmware. Continue?"):
+        if not messagebox.askyesno(
+                self._t("Confirm"),
+                self._t("About to run the factory Flash firmware. Continue?")):
             return
         self._run(lambda: self.client.factory_run_flash_fw())
 
@@ -1210,14 +1652,18 @@ class PowerWriterGui:
         self._run(task)
 
     def _apply_project_info(self, info) -> None:
-        self.proj_active_var.set("Valid" if info.active else "Invalid")
-        self.proj_size_var.set("%d bytes" % info.size)
+        self._proj_active_state = bool(info.active)
+        self._render_project_state()
+        self.proj_size_var.set(self._t("%d bytes", info.size))
         self.proj_crc_var.set("0x%08X" % info.crc32)
 
     def _browse_project(self) -> None:
         path = filedialog.askopenfilename(
-            title="Select offline project",
-            filetypes=[("PowerWriter project", "*.pkg"), ("All files", "*.*")],
+            title=self._t("Select offline project"),
+            filetypes=[
+                (self._t("PowerWriter project"), "*.pkg"),
+                (self._t("All files"), "*.*"),
+            ],
         )
         if path:
             self.proj_file_var.set(path)
@@ -1226,16 +1672,22 @@ class PowerWriterGui:
 
     def _project_load(self) -> None:
         if self.client is None or not self.client.is_open:
-            messagebox.showwarning("Not connected", "Connect the PowerWriter device first")
+            messagebox.showwarning(
+                self._t("Not connected"),
+                self._t("Connect the PowerWriter device first"))
             return
         path = Path(self.proj_file_var.get())
         if not path.is_file():
-            messagebox.showerror("File error", "Select a valid project file")
+            messagebox.showerror(
+                self._t("File error"),
+                self._t("Select a valid project file"))
             return
         name = self.proj_name_var.get().strip() or path.name
         data = path.read_bytes()
         if not messagebox.askyesno(
-                "Confirm load", "About to load project %s (%d bytes) to the writer. Continue?" % (name, len(data))):
+                self._t("Confirm load"),
+                self._t("About to load project %s (%d bytes) to the writer. Continue?",
+                        name, len(data))):
             return
 
         password = self.proj_password_var.get()
@@ -1263,7 +1715,9 @@ class PowerWriterGui:
         self._run(task)
 
     def _project_disable(self) -> None:
-        if not messagebox.askyesno("Confirm", "About to disable the offline project on the writer. Continue?"):
+        if not messagebox.askyesno(
+                self._t("Confirm"),
+                self._t("About to disable the offline project on the writer. Continue?")):
             return
         def task():
             self.client.project_disable()
@@ -1273,16 +1727,53 @@ class PowerWriterGui:
 
     def _offline_start(self) -> None:
         if self.client is None or not self.client.is_open:
-            messagebox.showwarning("Not connected", "Connect the PowerWriter device first")
+            messagebox.showwarning(
+                self._t("Not connected"),
+                self._t("Connect the PowerWriter device first"))
             return
         if not messagebox.askyesno(
-                "Confirm", "About to start an offline write (this erases/writes the target chip). Continue?"):
+                self._t("Confirm"),
+                self._t("About to start an offline write (this erases/writes the target chip). Continue?")):
             return
-        self.offline_status_var.set("Starting...")
+        self.offline_stop.clear()
+        self.offline_status_var.set(self._t("Starting..."))
+        self.offline_progress.configure(value=0, maximum=100)
 
         def task():
             self.client.offline_start()
-            self._post(lambda: self.offline_status_var.set("Offline write started"))
+            self._post(lambda: self.offline_status_var.set(
+                self._t("Offline write started")))
+            deadline = time.monotonic() + 180.0
+            while not self.offline_stop.is_set():
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(self._t(
+                        "Timed out waiting for offline programming status"))
+                status = self.client.offline_status()
+                if status.failed:
+                    self._post(lambda: self.offline_status_var.set(
+                        self._t("Offline write failed")))
+                    raise PowerWriterATError(
+                        status.error_code,
+                        self._t("Offline programming failed"))
+                if status.state == OfflineState.OK:
+                    self._post(lambda: self._offline_done(
+                        "Offline write completed", 100))
+                    self._post(lambda: self._append_log(
+                        "info", "Offline write completed"))
+                    return
+                if status.progress and status.progress.total:
+                    processed = status.progress.processed
+                    total = status.progress.total
+                    self._post(lambda p=processed, t=total:
+                               self._offline_progress(p, t))
+                else:
+                    self._post(lambda: self.offline_status_var.set(
+                        self._t("Offline write in progress...")))
+                time.sleep(0.3)
+            self._post(lambda: self.offline_status_var.set(
+                self._t("Offline polling stopped")))
+            self._post(lambda: self._append_log(
+                "warn", "Offline polling stopped"))
 
         self._run(task)
 
@@ -1290,16 +1781,17 @@ class PowerWriterGui:
         if total and processed > total:
             # Some firmware uses 0xFFFFFFFF as a "starting" sentinel.
             self.offline_progress.configure(maximum=max(total, 1), value=0)
-            self.offline_status_var.set("Offline write: preparing...")
+            self.offline_status_var.set(self._t("Offline write: preparing..."))
             return
         percent = int(processed * 100 / total) if total else 0
         self.offline_progress.configure(maximum=total, value=processed)
-        self.offline_status_var.set("Offline write: %d%% (%d/%d)"
-                                    % (percent, processed, total))
+        self.offline_status_var.set(
+            "%s: %d%% (%d/%d)" % (self._t("Offline write"),
+                                  percent, processed, total))
 
     def _offline_done(self, text: str, percent: int) -> None:
         self.offline_progress.configure(value=self.offline_progress["maximum"])
-        self.offline_status_var.set(text)
+        self.offline_status_var.set(self._t(text))
 
     def _offline_stop_clicked(self) -> None:
         self.offline_stop.set()
@@ -1310,20 +1802,24 @@ class PowerWriterGui:
             status = self.client.offline_status()
             if status.failed:
                 raise PowerWriterATError(
-                    status.error_code, "Offline status query returned an error code (the device may not be writing)")
+                    status.error_code,
+                    self._t("Offline status query returned an error code (the device may not be writing)"))
             if status.state == OfflineState.OK:
                 self._post(lambda: self._offline_done("Offline write completed", 100))
             elif status.progress and status.progress.total:
                 processed, total = status.progress.processed, status.progress.total
                 self._post(lambda p=processed, t=total: self._offline_progress(p, t))
             else:
-                self._post(lambda: self.offline_status_var.set("Status unknown"))
+                self._post(lambda: self.offline_status_var.set(
+                    self._t("Status unknown")))
         self._run(task)
 
     def _project_switch(self) -> None:
         name = self.switch_name_var.get().strip()
         if not name:
-            messagebox.showwarning("Invalid parameter", "Enter the project name")
+            messagebox.showwarning(
+                self._t("Invalid parameter"),
+                self._t("Enter the project name"))
             return
         password = self.switch_password_var.get()
         reload_project = bool(self.switch_reload_var.get())
@@ -1336,18 +1832,29 @@ class PowerWriterGui:
                 reload=reload_project,
                 name_encoding=encoding,
             )
+            self._post(lambda: self._project_switch_succeeded(name))
         self._run(task)
+
+    def _project_switch_succeeded(self, name: str) -> None:
+        text = self._t("Project switched successfully: %s", name)
+        self.project_status_var.set(text)
+        self._append_log("info", text)
+        messagebox.showinfo(self._t("Project switched"), text)
 
     # ==================================================================
     # Broadcast
     # ==================================================================
     def _broadcast_send(self) -> None:
         if self.client is None or not self.client.is_open:
-            messagebox.showwarning("Not connected", "Connect the PowerWriter device first")
+            messagebox.showwarning(
+                self._t("Not connected"),
+                self._t("Connect the PowerWriter device first"))
             return
         raw = self.broadcast_text.get("1.0", "end").strip()
         if not raw:
-            messagebox.showwarning("Invalid parameter", "Enter broadcast data")
+            messagebox.showwarning(
+                self._t("Invalid parameter"),
+                self._t("Enter broadcast data"))
             return
         try:
             if self.broadcast_hex_var.get():
@@ -1355,10 +1862,13 @@ class PowerWriterGui:
             else:
                 data = raw.encode("utf-8")
         except ValueError as exc:
-            messagebox.showerror("Data format error", "Invalid hex format: %s" % exc)
+            messagebox.showerror(
+                self._t("Data format error"),
+                self._t("Invalid hex format: %s", exc))
             return
+        first_direction = self._t(list(BROADCAST_DIR_LABELS.values())[0])
         direction = (BroadcastDir.CDC2UART
-                     if self.broadcast_dir_var.get() == list(BROADCAST_DIR_LABELS.values())[0]
+                     if self.broadcast_dir_var.get() == first_direction
                      else BroadcastDir.UART2CDC)
         keep = bool(self.broadcast_keep_var.get())
         wait = bool(self.broadcast_wait_var.get())
@@ -1377,11 +1887,15 @@ class PowerWriterGui:
         self.broadcast_response.configure(state="normal")
         self.broadcast_response.delete("1.0", "end")
         if response is None:
-            self.broadcast_response.insert("1.0", "No response (sent successfully)")
+            self.broadcast_response.insert(
+                "1.0", self._t("No response (sent successfully)"))
         else:
-            text = "Direction: %d, keep AT frame: %s, data %d bytes\n\n" % (
-                response.direction, response.keep_frame, len(response.data))
-            text += hexdump(response.data)
+            text = self._t(
+                "Direction: %d, keep AT frame: %s, data %d bytes",
+                response.direction,
+                self._t("Yes") if response.keep_frame else self._t("No"),
+                len(response.data))
+            text += "\n\n" + hexdump(response.data)
             self.broadcast_response.insert("1.0", text)
         self.broadcast_response.configure(state="disabled")
 
@@ -1390,16 +1904,19 @@ class PowerWriterGui:
     # ==================================================================
     def _run_demo(self, destructive: bool) -> None:
         if self.client is None or not self.client.is_open:
-            messagebox.showwarning("Not connected", "Connect the PowerWriter device first")
+            messagebox.showwarning(
+                self._t("Not connected"),
+                self._t("Connect the PowerWriter device first"))
             return
         if destructive and not messagebox.askyesno(
-                "Confirm full workflow",
-                "The full workflow erases and writes the target Flash, writes OptionByte and loads an offline project.\n"
-                "Target chip data will be lost. Continue?"):
+                self._t("Confirm full workflow"),
+                self._t(
+                    "The full workflow erases and writes the target Flash, writes OptionByte and loads an offline project.\n"
+                    "Target chip data will be lost. Continue?")):
             return
 
         self.demo_stop.clear()
-        self.demo_status_var.set("Running...")
+        self.demo_status_var.set(self._t("Running..."))
         self.demo_progress.configure(value=0, maximum=100)
 
         def progress(label: str, processed: int, total: int) -> None:
@@ -1420,7 +1937,7 @@ class PowerWriterGui:
             except InterruptedError:
                 self._post(self._demo_stopped)
                 return
-            self._post(lambda: self.demo_status_var.set("Done"))
+            self._post(lambda: self.demo_status_var.set(self._t("Done")))
 
         self._run(task)
 
@@ -1429,7 +1946,7 @@ class PowerWriterGui:
         self._append_log("info", "Requested stop of the sample workflow")
 
     def _demo_stopped(self) -> None:
-        self.demo_status_var.set("Stopped")
+        self.demo_status_var.set(self._t("Stopped"))
         self._append_log("warn", "Sample workflow stopped")
 
     # ==================================================================
@@ -1437,6 +1954,7 @@ class PowerWriterGui:
     # ==================================================================
     def _set_progress(self, bar: ttk.Progressbar, label_var: tk.StringVar,
                       name: str, processed: int, total: int) -> None:
+        name = self._t(name)
         if total <= 0:
             bar.configure(maximum=1, value=0)
             label_var.set("%s: 0" % name)
@@ -1447,7 +1965,8 @@ class PowerWriterGui:
 
     def _on_close(self) -> None:
         if self.busy and not messagebox.askyesno(
-                "Operation in progress", "An operation is still running. Exit anyway?"):
+                self._t("Operation in progress"),
+                self._t("An operation is still running. Exit anyway?")):
             return
         if getattr(self, "_poll_after_id", None):
             try:
@@ -1469,9 +1988,9 @@ def main() -> int:
     if smoke_test:
         root.withdraw()
     try:
-        app = PowerWriterGui(root)
+        app = PowerWriterGui(root, maximized=not smoke_test)
     except Exception as exc:
-        messagebox.showerror("Startup failed", str(exc))
+        messagebox.showerror(Translator().tr("Startup failed"), str(exc))
         root.destroy()
         return 1
     if smoke_test:
