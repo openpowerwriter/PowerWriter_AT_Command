@@ -319,7 +319,11 @@ def main() -> int:
         return 0
 
     event = _load_event(args.event)
-    release = event.get("release") or {}
+    release = event.get("release")
+    if not isinstance(release, dict):
+        # `gh api repos/.../releases/tags/<tag>` returns the release object
+        # directly, while a GitHub release event wraps it in "release".
+        release = event
     tag = args.tag or release.get("tag_name")
     if not tag:
         parser.error("--tag is required when the event has no release tag")
