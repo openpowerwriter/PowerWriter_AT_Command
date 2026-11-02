@@ -4,9 +4,10 @@
 Python executables on Windows, Linux, and macOS. The release job behaves as
 follows:
 
-- On every push to `main`, it creates a prerelease tagged
+- On every push to `main`, it creates a release tagged
   `v<version>-build.<run_number>` and uploads the three platform ZIP files.
-  Each ZIP contains the executables and the matching runtime library.
+  Each ZIP contains the executables and the matching runtime library. The
+  new release is marked as GitHub Latest.
 - When a GitHub Release is published manually, it uploads the same ZIP files
   to that release instead of creating a new one.
 - When Gitee credentials are configured, it also mirrors the release metadata

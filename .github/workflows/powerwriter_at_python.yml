@@ -111,17 +111,14 @@ jobs:
           if [ "${EVENT_NAME}" = "release" ]; then
             tag="${RELEASE_TAG}"
             title=""
-            prerelease="false"
           else
             version="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' source/powerwriter_at_commander_python/pw_at/__init__.py)"
             [ -n "${version}" ] || version="0.0.0"
             tag="v${version}-build.${RUN_NUMBER}"
             title="PowerWriter AT Python v${version} build ${RUN_NUMBER}"
-            prerelease="true"
           fi
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
           echo "title=${title}" >> "$GITHUB_OUTPUT"
-          echo "prerelease=${prerelease}" >> "$GITHUB_OUTPUT"
           echo "Release tag: ${tag}"
 
       - name: Download artifacts
@@ -152,7 +149,7 @@ jobs:
               --target "${{ github.sha }}" \
               --title "${TITLE}" \
               --generate-notes \
-              --prerelease
+              --latest
           fi
 
       - name: Upload release assets
