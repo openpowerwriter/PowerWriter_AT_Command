@@ -1,0 +1,65 @@
+name: Sync release assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing GitHub release tag"
+        required: true
+        type: string
+      run_id:
+        description: "Optional Actions run ID to rebuild release ZIPs from"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  sync:
+    name: Repair and sync release assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Prepare release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          RUN_ID: ${{ inputs.run_id }}
+        run: |
+          mkdir -p artifacts
+          gh api "repos/${{ github.repository }}/releases/tags/${TAG}" > release.json
+          if [ -n "${RUN_ID}" ]; then
+            rm -rf downloaded
+            gh run download "${RUN_ID}" --repo "${{ github.repository }}" --dir downloaded
+            for dir in downloaded/*/; do
+              name="$(basename "${dir}")"
+              (cd "${dir}" && zip -r "${{ github.workspace }}/artifacts/${name}.zip" .)
+            done
+            gh release upload "${TAG}" artifacts/*.zip --clobber \
+              --repo "${{ github.repository }}"
+          else
+            gh release download "${TAG}" \
+              --repo "${{ github.repository }}" \
+              --pattern "*.zip" \
+              --dir artifacts
+          fi
+
+      - name: Sync to Gitee
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          GITEE_OWNER: openpowerwriter
+          GITEE_REPO: PowerWriter_AT_Command
+          GITEE_TARGET_COMMITISH: main
+        run: |
+          python .github/scripts/sync_gitee_release.py \
+            --event release.json \
+            --tag "${{ inputs.tag }}" \
+            --target "$GITEE_TARGET_COMMITISH" \
+            --assets artifacts/*.zip

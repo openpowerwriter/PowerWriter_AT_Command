@@ -90,6 +90,14 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout release helper
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            .github
+          sparse-checkout-cone-mode: false
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -106,4 +114,16 @@ jobs:
       - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name }}" artifacts/*.zip --clobber
+        run: gh release upload "${{ github.event.release.tag_name }}" artifacts/*.zip --clobber --repo "${{ github.repository }}"
+
+      - name: Sync release to Gitee
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          GITEE_OWNER: openpowerwriter
+          GITEE_REPO: PowerWriter_AT_Command
+          GITEE_TARGET_COMMITISH: main
+        run: |
+          python .github/scripts/sync_gitee_release.py \
+            --event "$GITHUB_EVENT_PATH" \
+            --target "$GITEE_TARGET_COMMITISH" \
+            --assets artifacts/*.zip
