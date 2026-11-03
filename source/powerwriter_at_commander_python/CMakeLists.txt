@@ -59,8 +59,9 @@ add_library(powerwriter_at SHARED
     csrc/pwat_bridge.c
     csrc/pwat_bridge.h
     csrc/pwat_port.c
+    csrc/pwat_crypto.c
+    csrc/pwat_crypto.h
     ${CORE_DIR}/powerwriter_at_api.c
-    ${CORE_DIR}/powerwriter_at_cert.c
     ${CORE_DIR}/powerwriter_at_utils.c
     ${CORE_DIR}/3rd/crc/crc32.c
     ${CORE_DIR}/3rd/crc/crc.h
@@ -75,7 +76,8 @@ target_include_directories(powerwriter_at PRIVATE
 )
 
 # 启用 AES128-CBC 加密支持。是否实际加密由 pwat_create(encrypt) 决定，
-# 未加密通信不受影响。
+# 未加密通信不受影响。pwat_crypto.c replaces the core's fixed key/IV wrapper
+# with a runtime-configurable one, so powerwriter_at_cert.c is not linked here.
 target_compile_definitions(powerwriter_at PRIVATE
     POWERWRITER_AT_ENCRYPT_ENABLE
 )

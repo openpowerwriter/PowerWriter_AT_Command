@@ -16,10 +16,12 @@ Before running:
 from __future__ import annotations
 
 import queue
+import secrets
 import sys
 import threading
 import time
 import traceback
+from dataclasses import replace
 from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, font as tkfont, messagebox, simpledialog, ttk
@@ -49,8 +51,11 @@ from pw_at.constants import (
 from pw_at.demo import (
     DEFAULT_PROJECT,
     DEFAULT_PROJECT_NAME,
+    DEFAULT_READ_RANGES,
     GUIDE_TEXT,
     INTRODUCTION,
+    ReadRangeSettings,
+    SampleWorkflowSettings,
     run_sample_workflow,
     wait_target_connected,
 )
@@ -58,7 +63,11 @@ from pw_at.hexfile import HexError, parse_intel_hex
 from pw_at.i18n import LANGUAGES, LANGUAGE_NAMES, Translator, save_language
 from pw_at.models import WriterConfig
 from pw_at.transport import list_serial_ports
-from pw_at.utils import hexdump
+from pw_at.utils import hexdump, parse_aes_material
+from pw_at.workflow_settings import (
+    load_workflow_settings,
+    save_workflow_settings,
+)
 
 # Chinese labels <-> enumeration values
 ERASE_BY_LABEL = {label: int(value) for value, label in ERASE_TYPE_LABELS.items()}
@@ -76,6 +85,618 @@ LOG_TAGS = {
 LOG_PREFIX = {"debug": "[Debug]", "info": "[Info]", "warn": "[Warn]", "error": "[Error]"}
 
 
+class EncryptionDialog(tk.Toplevel):
+    """Modal AES key/IV editor used when encryption is enabled."""
+
+    def __init__(self, parent, translate, key_text="", iv_text=""):
+        super().__init__(parent)
+        self._t = translate
+        self.result = None
+        self.title(self._t("Encryption settings"))
+        self.transient(parent)
+        self.resizable(False, False)
+        self.protocol("WM_DELETE_WINDOW", self._cancel)
+
+        body = ttk.Frame(self, padding=12)
+        body.pack(fill="both", expand=True)
+
+        self.key_var = tk.StringVar(value=key_text)
+        self.iv_var = tk.StringVar(value=iv_text)
+        self.show_var = tk.BooleanVar(value=False)
+
+        ttk.Label(body, text=self._t("AES128-CBC key (32 hex digits):"))\
+            .grid(row=0, column=0, sticky="w", pady=(0, 4))
+        self.key_entry = ttk.Entry(
+            body, textvariable=self.key_var, width=48,
+            font=("Consolas", 10), show="*")
+        self.key_entry.grid(row=1, column=0, columnspan=2, sticky="we")
+
+        ttk.Label(body, text=self._t("AES128-CBC IV (32 hex digits):"))\
+            .grid(row=2, column=0, sticky="w", pady=(10, 4))
+        self.iv_entry = ttk.Entry(
+            body, textvariable=self.iv_var, width=48,
+            font=("Consolas", 10), show="*")
+        self.iv_entry.grid(row=3, column=0, columnspan=2, sticky="we")
+
+        actions = ttk.Frame(body)
+        actions.grid(row=4, column=0, columnspan=2, sticky="we", pady=(6, 0))
+        ttk.Checkbutton(
+            actions, text=self._t("Show"), variable=self.show_var,
+            command=self._toggle_show).pack(side="left")
+        ttk.Button(
+            actions, text=self._t("Generate"),
+            command=self._generate).pack(side="left", padx=(12, 0))
+
+        ttk.Label(
+            body,
+            text=self._t("The key and IV must match the PowerWriter device settings."),
+            style="Hint.TLabel", wraplength=420)\
+            .grid(row=5, column=0, columnspan=2, sticky="w", pady=(10, 0))
+
+        buttons = ttk.Frame(body)
+        buttons.grid(row=6, column=0, columnspan=2, sticky="e", pady=(14, 0))
+        ttk.Button(buttons, text=self._t("OK"), command=self._ok)\
+            .pack(side="right")
+        ttk.Button(buttons, text=self._t("Cancel"), command=self._cancel)\
+            .pack(side="right", padx=(0, 8))
+
+        self.bind("<Return>", lambda _event: self._ok())
+        self.bind("<Escape>", lambda _event: self._cancel())
+        self.update_idletasks()
+        try:
+            parent.update_idletasks()
+            x = parent.winfo_rootx() + max(
+                0, (parent.winfo_width() - self.winfo_reqwidth()) // 2)
+            y = parent.winfo_rooty() + max(
+                0, (parent.winfo_height() - self.winfo_reqheight()) // 2)
+            self.geometry("+%d+%d" % (x, y))
+        except tk.TclError:
+            pass
+        self.grab_set()
+        self.key_entry.focus_set()
+        self.wait_window(self)
+
+    def _toggle_show(self):
+        show = "" if self.show_var.get() else "*"
+        self.key_entry.configure(show=show)
+        self.iv_entry.configure(show=show)
+
+    def _generate(self):
+        self.key_var.set(secrets.token_hex(16).upper())
+        self.iv_var.set(secrets.token_hex(16).upper())
+        self.show_var.set(True)
+        self._toggle_show()
+
+    def _ok(self):
+        try:
+            key = parse_aes_material(self.key_var.get(), "AES key")
+        except ValueError as exc:
+            messagebox.showerror(
+                self._t("Invalid parameter"),
+                self._t("Invalid AES key: %s", exc), parent=self)
+            return
+        try:
+            iv = parse_aes_material(self.iv_var.get(), "AES IV")
+        except ValueError as exc:
+            messagebox.showerror(
+                self._t("Invalid parameter"),
+                self._t("Invalid AES IV: %s", exc), parent=self)
+            return
+        self.result = (key.hex().upper(), iv.hex().upper())
+        self.destroy()
+
+    def _cancel(self):
+        self.result = None
+        self.destroy()
+
+
+class BatchTestSettingsDialog(tk.Toplevel):
+    """Modal editor for the safe/full sample workflow parameters."""
+
+    def __init__(self, parent, translate, settings: SampleWorkflowSettings):
+        super().__init__(parent)
+        self._t = translate
+        self.result = None
+        self.title(self._t("Batch test settings"))
+        self.transient(parent)
+        self.resizable(True, True)
+        screen_h = self.winfo_screenheight()
+        dialog_h = min(760, max(480, screen_h - 160))
+        self.geometry("820x%d" % dialog_h)
+        self.minsize(720, 480)
+        self.protocol("WM_DELETE_WINDOW", self._cancel)
+
+        buttons = ttk.Frame(self, padding=(10, 0, 10, 10))
+        buttons.pack(side="bottom", fill="x")
+        ttk.Button(buttons, text=self._t("Restore defaults"),
+                   command=self._restore_defaults).pack(side="left")
+        ttk.Button(buttons, text=self._t("Save"), command=self._save)\
+            .pack(side="right")
+        ttk.Button(buttons, text=self._t("Cancel"), command=self._cancel)\
+            .pack(side="right", padx=(0, 8))
+
+        outer = ttk.Frame(self, padding=10)
+        outer.pack(fill="both", expand=True)
+        canvas = tk.Canvas(outer, borderwidth=0, highlightthickness=0)
+        scroll = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scroll.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
+        content = ttk.Frame(canvas)
+        window = canvas.create_window((0, 0), window=content, anchor="nw")
+        content.bind(
+            "<Configure>",
+            lambda _event: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind(
+            "<Configure>",
+            lambda event: canvas.itemconfigure(window, width=event.width))
+
+        self._build_vars(settings)
+        self._build_content(content)
+        self._load_settings(settings)
+
+        self.bind("<Escape>", lambda _event: self._cancel())
+        self.update_idletasks()
+        try:
+            parent.update_idletasks()
+            screen_w = self.winfo_screenwidth()
+            width = 820
+            height = dialog_h
+            x = parent.winfo_rootx() + max(
+                0, (parent.winfo_width() - width) // 2)
+            y = parent.winfo_rooty() + max(
+                0, (parent.winfo_height() - height) // 2)
+            x = max(20, min(x, screen_w - width - 20))
+            y = max(20, min(y, screen_h - height - 60))
+            self.geometry("%dx%d+%d+%d" % (width, height, x, y))
+        except tk.TclError:
+            pass
+        self.grab_set()
+        self.wait_window(self)
+
+    def _build_vars(self, settings):
+        def text(value):
+            return tk.StringVar(value=str(value))
+
+        self.connect_timeout = text(settings.connect_timeout_s)
+        self.reconnect_timeout = text(settings.reconnect_timeout_s)
+        self.read_enabled = []
+        self.read_address = []
+        self.read_size = []
+        for item in settings.read_ranges:
+            self.read_enabled.append(tk.BooleanVar(value=item.enabled))
+            self.read_address.append(text("0x%08X" % item.address))
+            self.read_size.append(text(str(item.size)))
+
+        self.reset_enabled = tk.BooleanVar(value=settings.reset_enabled)
+        self.reset_type = tk.StringVar()
+        self.reset_delay = text(settings.reset_delay_ms)
+        self.vendor_ob_enabled = tk.BooleanVar(value=settings.write_vendor_ob_enabled)
+        self.vendor_ob_timeout = text(settings.write_vendor_ob_timeout_ms)
+        self.full_erase_enabled = tk.BooleanVar(value=settings.full_erase_enabled)
+        self.full_erase_timeout = text(settings.full_erase_timeout_ms)
+        self.sector_erase_enabled = tk.BooleanVar(value=settings.sector_erase_enabled)
+        self.sector_erase_address = text("0x%08X" % settings.sector_erase_address)
+        self.sector_erase_size = text("0x%X" % settings.sector_erase_size)
+        self.sector_erase_timeout = text(settings.sector_erase_timeout_ms)
+        self.write_enabled = tk.BooleanVar(value=settings.write_enabled)
+        self.write_address = text("0x%08X" % settings.write_address)
+        self.write_size = text("0x%X" % settings.write_size)
+        self.read_ob_enabled = tk.BooleanVar(value=settings.read_ob_enabled)
+        self.user_ob_enabled = tk.BooleanVar(value=settings.write_user_ob_enabled)
+        self.user_ob_timeout = text(settings.write_user_ob_timeout_ms)
+        self.broadcast_enabled = tk.BooleanVar(value=settings.broadcast_enabled)
+        self.broadcast_data = text(settings.broadcast_data)
+        self.broadcast_direction = tk.StringVar()
+        self.broadcast_keep = tk.BooleanVar(value=settings.broadcast_keep_frame)
+        self.broadcast_wait = tk.BooleanVar(value=settings.broadcast_wait_rsp)
+        self.broadcast_timeout = text(settings.broadcast_timeout_ms)
+        self.factory_sram_enabled = tk.BooleanVar(value=settings.factory_sram_enabled)
+        self.factory_sram_timeout = text(settings.factory_sram_timeout_ms)
+        self.factory_flash_enabled = tk.BooleanVar(value=settings.factory_flash_enabled)
+        self.factory_flash_timeout = text(settings.factory_flash_timeout_ms)
+        self.load_project_enabled = tk.BooleanVar(value=settings.load_project_enabled)
+        self.offline_start_enabled = tk.BooleanVar(value=settings.offline_start_enabled)
+        self.offline_timeout = text(settings.offline_timeout_s)
+        self.switch_enabled = tk.BooleanVar(value=settings.switch_project_enabled)
+        self.switch_reload = tk.BooleanVar(value=settings.switch_reload)
+
+    def _build_content(self, content):
+        content.columnconfigure(0, weight=1)
+        row = 0
+
+        general = ttk.LabelFrame(
+            content, text=self._t("Connection"), padding=8)
+        general.grid(row=row, column=0, sticky="ew", pady=(0, 8))
+        ttk.Label(general, text=self._t("Connect timeout (s):"))\
+            .grid(row=0, column=0, sticky="w")
+        ttk.Entry(general, textvariable=self.connect_timeout, width=10)\
+            .grid(row=0, column=1, sticky="w", padx=(4, 24))
+        ttk.Label(general, text=self._t("Reconnect timeout (s):"))\
+            .grid(row=0, column=2, sticky="w")
+        ttk.Entry(general, textvariable=self.reconnect_timeout, width=10)\
+            .grid(row=0, column=3, sticky="w", padx=(4, 0))
+        row += 1
+
+        safe = ttk.LabelFrame(
+            content, text=self._t("Safe workflow reads"), padding=8)
+        safe.grid(row=row, column=0, sticky="ew", pady=(0, 8))
+        ttk.Label(safe, text=self._t("Address:"), style="Title.TLabel")\
+            .grid(row=0, column=1, sticky="w", padx=(8, 8))
+        ttk.Label(safe, text=self._t("Size:"), style="Title.TLabel")\
+            .grid(row=0, column=2, sticky="w")
+        for index in range(len(self.read_enabled)):
+            base = index + 1
+            check = ttk.Checkbutton(
+                safe, text=self._t("Read range %d", base),
+                variable=self.read_enabled[index])
+            check.grid(row=base, column=0, sticky="w", pady=2)
+            address = ttk.Entry(
+                safe, textvariable=self.read_address[index], width=14)
+            address.grid(row=base, column=1, padx=(8, 8), pady=2)
+            size = ttk.Entry(
+                safe, textvariable=self.read_size[index], width=12)
+            size.grid(row=base, column=2, padx=(0, 8), pady=2)
+            self._bind_enable(self.read_enabled[index], (address, size))
+        row += 1
+
+        full = ttk.LabelFrame(
+            content, text=self._t("Full workflow steps"), padding=8)
+        full.grid(row=row, column=0, sticky="ew", pady=(0, 8))
+        full.columnconfigure(0, weight=1)
+        step = 0
+
+        frame = ttk.Frame(full)
+        frame.grid(row=step, column=0, sticky="ew", pady=2)
+        reset_check = ttk.Checkbutton(
+            frame, text=self._t("Reset"), variable=self.reset_enabled)
+        reset_check.pack(side="left", anchor="w")
+        ttk.Label(frame, text=self._t("Reset type:"))\
+            .pack(side="left", padx=(12, 4))
+        self.reset_type_combo = ttk.Combobox(
+            frame, textvariable=self.reset_type, state="readonly", width=32,
+            values=[self._t(label) for label in RESET_TYPE_LABELS.values()])
+        self.reset_type_combo.pack(side="left")
+        ttk.Label(frame, text=self._t("Reset delay (ms):"))\
+            .pack(side="left", padx=(12, 4))
+        reset_delay = ttk.Entry(frame, textvariable=self.reset_delay, width=8)
+        reset_delay.pack(side="left")
+        self._bind_enable(
+            self.reset_enabled, (self.reset_type_combo, reset_delay),
+            combo=self.reset_type_combo)
+        step += 1
+
+        self.vendor_ob_timeout_entry = self._step_with_timeout(
+            full, step, self._t("Write vendor default OB"),
+            self.vendor_ob_enabled, self.vendor_ob_timeout)
+        step += 1
+        self.full_erase_timeout_entry = self._step_with_timeout(
+            full, step, self._t("Chip erase"),
+            self.full_erase_enabled, self.full_erase_timeout)
+        step += 1
+
+        frame = ttk.Frame(full)
+        frame.grid(row=step, column=0, sticky="ew", pady=2)
+        sector_check = ttk.Checkbutton(
+            frame, text=self._t("Sector erase"),
+            variable=self.sector_erase_enabled)
+        sector_check.pack(side="left", anchor="w")
+        ttk.Label(frame, text=self._t("Address:"))\
+            .pack(side="left", padx=(12, 4))
+        sector_addr = ttk.Entry(
+            frame, textvariable=self.sector_erase_address, width=14)
+        sector_addr.pack(side="left")
+        ttk.Label(frame, text=self._t("Size:"))\
+            .pack(side="left", padx=(8, 4))
+        sector_size = ttk.Entry(
+            frame, textvariable=self.sector_erase_size, width=10)
+        sector_size.pack(side="left")
+        ttk.Label(frame, text=self._t("Timeout (ms):"))\
+            .pack(side="left", padx=(8, 4))
+        sector_timeout = ttk.Entry(
+            frame, textvariable=self.sector_erase_timeout, width=8)
+        sector_timeout.pack(side="left")
+        self._bind_enable(
+            self.sector_erase_enabled, (sector_addr, sector_size, sector_timeout))
+        step += 1
+
+        frame = ttk.Frame(full)
+        frame.grid(row=step, column=0, sticky="ew", pady=2)
+        write_check = ttk.Checkbutton(
+            frame, text=self._t("Write Target Memory"), variable=self.write_enabled)
+        write_check.pack(side="left", anchor="w")
+        ttk.Label(frame, text=self._t("Address:"))\
+            .pack(side="left", padx=(12, 4))
+        write_addr = ttk.Entry(frame, textvariable=self.write_address, width=14)
+        write_addr.pack(side="left")
+        ttk.Label(frame, text=self._t("Size:"))\
+            .pack(side="left", padx=(8, 4))
+        write_size = ttk.Entry(frame, textvariable=self.write_size, width=10)
+        write_size.pack(side="left")
+        self._bind_enable(self.write_enabled, (write_addr, write_size))
+        step += 1
+
+        ttk.Checkbutton(
+            full, text=self._t("Read OB"), variable=self.read_ob_enabled)\
+            .grid(row=step, column=0, sticky="w", pady=2)
+        step += 1
+
+        self.user_ob_timeout_entry = self._step_with_timeout(
+            full, step, self._t("Write user OB"),
+            self.user_ob_enabled, self.user_ob_timeout)
+        step += 1
+
+        frame = ttk.Frame(full)
+        frame.grid(row=step, column=0, sticky="ew", pady=2)
+        bcast_check = ttk.Checkbutton(
+            frame, text=self._t("Broadcast"), variable=self.broadcast_enabled)
+        bcast_check.pack(side="left", anchor="nw")
+        details = ttk.Frame(frame)
+        details.pack(side="left", fill="x", expand=True)
+        ttk.Label(details, text=self._t("Broadcast data:"))\
+            .grid(row=0, column=0, sticky="w", padx=(12, 4))
+        bcast_data = ttk.Entry(
+            details, textvariable=self.broadcast_data, width=36)
+        bcast_data.grid(row=0, column=1, columnspan=4, sticky="we", pady=2)
+        ttk.Label(details, text=self._t("Direction:"))\
+            .grid(row=1, column=0, sticky="w", padx=(12, 4))
+        self.broadcast_direction_combo = ttk.Combobox(
+            details, textvariable=self.broadcast_direction, state="readonly",
+            width=18,
+            values=[self._t(label) for label in BROADCAST_DIR_LABELS.values()])
+        self.broadcast_direction_combo.grid(row=1, column=1, sticky="w")
+        bcast_keep = ttk.Checkbutton(
+            details, text=self._t("Keep full AT frame"),
+            variable=self.broadcast_keep)
+        bcast_keep.grid(row=1, column=2, sticky="w", padx=(8, 0))
+        bcast_wait = ttk.Checkbutton(
+            details, text=self._t("Wait for response"), variable=self.broadcast_wait)
+        bcast_wait.grid(row=1, column=3, sticky="w", padx=(8, 0))
+        ttk.Label(details, text=self._t("Timeout (ms):"))\
+            .grid(row=1, column=4, sticky="w", padx=(8, 4))
+        bcast_timeout = ttk.Entry(
+            details, textvariable=self.broadcast_timeout, width=8)
+        bcast_timeout.grid(row=1, column=5, sticky="w")
+        self._bind_enable(
+            self.broadcast_enabled,
+            (bcast_data, bcast_keep, bcast_wait, bcast_timeout),
+            combo=self.broadcast_direction_combo)
+        step += 1
+
+        factory = ttk.LabelFrame(
+            full, text=self._t("Factory Test"), padding=6)
+        factory.grid(row=step, column=0, sticky="ew", pady=(6, 0))
+        factory.columnconfigure(0, weight=1)
+        self.factory_sram_timeout_entry = self._step_with_timeout(
+            factory, 0, self._t("Run factory SRAM firmware"),
+            self.factory_sram_enabled, self.factory_sram_timeout)
+        self.factory_flash_timeout_entry = self._step_with_timeout(
+            factory, 1, self._t("Run factory Flash firmware"),
+            self.factory_flash_enabled, self.factory_flash_timeout)
+        row += 1
+
+        offline = ttk.LabelFrame(
+            content, text=self._t("Offline Programming"), padding=8)
+        offline.grid(row=row, column=0, sticky="ew")
+        offline.columnconfigure(0, weight=1)
+        ttk.Checkbutton(
+            offline, text=self._t("Load project"),
+            variable=self.load_project_enabled)\
+            .grid(row=0, column=0, sticky="w", pady=2)
+        ttk.Label(
+            offline,
+            text=self._t(
+                "Uses the current Offline Programming project (file, name, password, encoding)."),
+            style="Hint.TLabel")\
+            .grid(row=1, column=0, sticky="w", padx=(24, 0))
+        frame = ttk.Frame(offline)
+        frame.grid(row=2, column=0, sticky="ew", pady=2)
+        start_check = ttk.Checkbutton(
+            frame, text=self._t("Start offline write"),
+            variable=self.offline_start_enabled)
+        start_check.pack(side="left")
+        ttk.Label(frame, text=self._t("Offline timeout (s):"))\
+            .pack(side="left", padx=(12, 4))
+        offline_timeout = ttk.Entry(
+            frame, textvariable=self.offline_timeout, width=10)
+        offline_timeout.pack(side="left")
+        self._bind_enable(self.offline_start_enabled, (offline_timeout,))
+        frame = ttk.Frame(offline)
+        frame.grid(row=3, column=0, sticky="ew", pady=2)
+        switch_check = ttk.Checkbutton(
+            frame, text=self._t("Switch Project (PWX1)"),
+            variable=self.switch_enabled)
+        switch_check.pack(side="left")
+        reload_check = ttk.Checkbutton(
+            frame, text=self._t("Reload"), variable=self.switch_reload)
+        reload_check.pack(side="left", padx=(12, 0))
+        self._bind_enable(self.switch_enabled, (reload_check,))
+
+    def _step_with_timeout(self, parent, row, text, enabled, timeout_var):
+        frame = ttk.Frame(parent)
+        frame.grid(row=row, column=0, sticky="ew", pady=2)
+        ttk.Checkbutton(frame, text=text, variable=enabled).pack(side="left")
+        ttk.Label(frame, text=self._t("Timeout (ms):"))\
+            .pack(side="left", padx=(12, 4))
+        entry = ttk.Entry(frame, textvariable=timeout_var, width=10)
+        entry.pack(side="left")
+        self._bind_enable(enabled, (entry,))
+        return entry
+
+    def _bind_enable(self, variable, widgets, combo=None):
+        def update(*_args):
+            state = "normal" if variable.get() else "disabled"
+            for widget in widgets:
+                try:
+                    widget.configure(state=state)
+                except tk.TclError:
+                    pass
+            if combo is not None:
+                try:
+                    combo.configure(state="readonly" if variable.get() else "disabled")
+                except tk.TclError:
+                    pass
+        variable.trace_add("write", update)
+        update()
+
+    def _load_settings(self, settings: SampleWorkflowSettings):
+        if not 0 <= settings.reset_type <= 7:
+            settings = replace(settings, reset_type=int(ResetType.HW_CORE_RESET))
+        self.connect_timeout.set(str(settings.connect_timeout_s))
+        self.reconnect_timeout.set(str(settings.reconnect_timeout_s))
+        for index, item in enumerate(settings.read_ranges):
+            self.read_enabled[index].set(item.enabled)
+            self.read_address[index].set("0x%08X" % item.address)
+            self.read_size[index].set(str(item.size))
+        self.reset_enabled.set(settings.reset_enabled)
+        self.reset_type.set(self._t(RESET_TYPE_LABELS[ResetType(settings.reset_type)]))
+        self.reset_delay.set(str(settings.reset_delay_ms))
+        self.vendor_ob_enabled.set(settings.write_vendor_ob_enabled)
+        self.vendor_ob_timeout.set(str(settings.write_vendor_ob_timeout_ms))
+        self.full_erase_enabled.set(settings.full_erase_enabled)
+        self.full_erase_timeout.set(str(settings.full_erase_timeout_ms))
+        self.sector_erase_enabled.set(settings.sector_erase_enabled)
+        self.sector_erase_address.set("0x%08X" % settings.sector_erase_address)
+        self.sector_erase_size.set("0x%X" % settings.sector_erase_size)
+        self.sector_erase_timeout.set(str(settings.sector_erase_timeout_ms))
+        self.write_enabled.set(settings.write_enabled)
+        self.write_address.set("0x%08X" % settings.write_address)
+        self.write_size.set("0x%X" % settings.write_size)
+        self.read_ob_enabled.set(settings.read_ob_enabled)
+        self.user_ob_enabled.set(settings.write_user_ob_enabled)
+        self.user_ob_timeout.set(str(settings.write_user_ob_timeout_ms))
+        self.broadcast_enabled.set(settings.broadcast_enabled)
+        self.broadcast_data.set(settings.broadcast_data)
+        direction = BroadcastDir(settings.broadcast_direction) \
+            if settings.broadcast_direction in (0, 1) else BroadcastDir.CDC2UART
+        self.broadcast_direction.set(self._t(BROADCAST_DIR_LABELS[direction]))
+        self.broadcast_keep.set(settings.broadcast_keep_frame)
+        self.broadcast_wait.set(settings.broadcast_wait_rsp)
+        self.broadcast_timeout.set(str(settings.broadcast_timeout_ms))
+        self.factory_sram_enabled.set(settings.factory_sram_enabled)
+        self.factory_sram_timeout.set(str(settings.factory_sram_timeout_ms))
+        self.factory_flash_enabled.set(settings.factory_flash_enabled)
+        self.factory_flash_timeout.set(str(settings.factory_flash_timeout_ms))
+        self.load_project_enabled.set(settings.load_project_enabled)
+        self.offline_start_enabled.set(settings.offline_start_enabled)
+        self.offline_timeout.set(str(settings.offline_timeout_s))
+        self.switch_enabled.set(settings.switch_project_enabled)
+        self.switch_reload.set(settings.switch_reload)
+
+    def _restore_defaults(self):
+        self._load_settings(SampleWorkflowSettings())
+
+    def _read_int(self, var, label):
+        text = var.get().strip()
+        try:
+            return int(text, 0)
+        except ValueError:
+            raise ValueError(
+                self._t("%s must be an integer (0x prefix supported)", label))
+
+    def _read_float(self, var, label):
+        text = var.get().strip()
+        try:
+            return float(text)
+        except ValueError:
+            raise ValueError(
+                self._t("%s must be a number", label))
+
+    def _save(self):
+        try:
+            reset_label = self.reset_type.get()
+            reset_value = next(
+                (int(value) for value, label in RESET_TYPE_LABELS.items()
+                 if self._t(label) == reset_label), None)
+            if reset_value is None:
+                raise ValueError(self._t("Invalid parameter"))
+            direction_label = self.broadcast_direction.get()
+            direction_value = next(
+                (int(value) for value, label in BROADCAST_DIR_LABELS.items()
+                 if self._t(label) == direction_label), None)
+            if direction_value is None:
+                raise ValueError(self._t("Invalid parameter"))
+            ranges = []
+            for index in range(len(self.read_enabled)):
+                ranges.append(ReadRangeSettings(
+                    enabled=self.read_enabled[index].get(),
+                    label=DEFAULT_READ_RANGES[index].label,
+                    address=self._read_int(
+                        self.read_address[index],
+                        self._t("Read range %d", index + 1)),
+                    size=self._read_int(
+                        self.read_size[index],
+                        self._t("Read range %d", index + 1)),
+                ))
+            settings = SampleWorkflowSettings(
+                connect_timeout_s=self._read_float(
+                    self.connect_timeout, self._t("Connect timeout (s):")),
+                reconnect_timeout_s=self._read_float(
+                    self.reconnect_timeout, self._t("Reconnect timeout (s):")),
+                read_ranges=ranges,
+                reset_enabled=self.reset_enabled.get(),
+                reset_type=reset_value,
+                reset_delay_ms=self._read_int(
+                    self.reset_delay, self._t("Reset delay (ms):")),
+                write_vendor_ob_enabled=self.vendor_ob_enabled.get(),
+                write_vendor_ob_timeout_ms=self._read_int(
+                    self.vendor_ob_timeout, self._t("Timeout (ms):")),
+                full_erase_enabled=self.full_erase_enabled.get(),
+                full_erase_timeout_ms=self._read_int(
+                    self.full_erase_timeout, self._t("Timeout (ms):")),
+                sector_erase_enabled=self.sector_erase_enabled.get(),
+                sector_erase_address=self._read_int(
+                    self.sector_erase_address, self._t("Address:")),
+                sector_erase_size=self._read_int(
+                    self.sector_erase_size, self._t("Size:")),
+                sector_erase_timeout_ms=self._read_int(
+                    self.sector_erase_timeout, self._t("Timeout (ms):")),
+                write_enabled=self.write_enabled.get(),
+                write_address=self._read_int(
+                    self.write_address, self._t("Address:")),
+                write_size=self._read_int(self.write_size, self._t("Size:")),
+                read_ob_enabled=self.read_ob_enabled.get(),
+                write_user_ob_enabled=self.user_ob_enabled.get(),
+                write_user_ob_timeout_ms=self._read_int(
+                    self.user_ob_timeout, self._t("Timeout (ms):")),
+                broadcast_enabled=self.broadcast_enabled.get(),
+                broadcast_data=self.broadcast_data.get(),
+                broadcast_direction=direction_value,
+                broadcast_keep_frame=self.broadcast_keep.get(),
+                broadcast_wait_rsp=self.broadcast_wait.get(),
+                broadcast_timeout_ms=self._read_int(
+                    self.broadcast_timeout, self._t("Timeout (ms):")),
+                factory_sram_enabled=self.factory_sram_enabled.get(),
+                factory_sram_timeout_ms=self._read_int(
+                    self.factory_sram_timeout, self._t("Timeout (ms):")),
+                factory_flash_enabled=self.factory_flash_enabled.get(),
+                factory_flash_timeout_ms=self._read_int(
+                    self.factory_flash_timeout, self._t("Timeout (ms):")),
+                load_project_enabled=self.load_project_enabled.get(),
+                offline_start_enabled=self.offline_start_enabled.get(),
+                offline_timeout_s=self._read_int(
+                    self.offline_timeout, self._t("Offline timeout (s):")),
+                switch_project_enabled=self.switch_enabled.get(),
+                switch_reload=self.switch_reload.get(),
+            )
+            settings.validate()
+        except ValueError as exc:
+            messagebox.showerror(
+                self._t("Invalid parameter"), str(exc), parent=self)
+            return
+        if not save_workflow_settings(settings):
+            messagebox.showerror(
+                self._t("File error"),
+                self._t("Could not save settings"), parent=self)
+            return
+        self.result = settings
+        self.destroy()
+
+    def _cancel(self):
+        self.result = None
+        self.destroy()
+
+
 class PowerWriterGui:
     def __init__(self, root: tk.Tk, language: str | None = None,
                  maximized: bool = True) -> None:
@@ -90,6 +711,7 @@ class PowerWriterGui:
         self.queue: "queue.Queue" = queue.Queue()
         self.offline_stop = threading.Event()
         self.demo_stop = threading.Event()
+        self.workflow_settings = load_workflow_settings()
         self._last_read: tuple[int, bytes] | None = None
         self._port_map: dict[str, str] = {}
         self._tab_sources: dict[str, str] = {}
@@ -312,6 +934,8 @@ class PowerWriterGui:
         self.port_var = tk.StringVar()
         self.baud_var = tk.StringVar(value="9600")
         self.encrypt_var = tk.BooleanVar(value=False)
+        self.encrypt_key_hex = ""
+        self.encrypt_iv_hex = ""
         self.pw_only_var = tk.BooleanVar(value=True)
         self.conn_status_var = tk.StringVar(value="Not connected")
 
@@ -405,8 +1029,9 @@ class PowerWriterGui:
         )
         self.baud_combo.grid(row=0, column=4, padx=(4, 12))
 
-        self.encrypt_chk = ttk.Checkbutton(conn, text="AES128-CBC encryption",
-                                           variable=self.encrypt_var)
+        self.encrypt_chk = ttk.Checkbutton(
+            conn, text="AES128-CBC encryption", variable=self.encrypt_var,
+            command=self._on_encrypt_toggle)
         self.encrypt_chk.grid(row=0, column=5, padx=(0, 12))
 
         self.connect_btn = ttk.Button(conn, text="Connect", width=8, command=self._on_connect)
@@ -853,10 +1478,17 @@ class PowerWriterGui:
                    command=lambda: self._run_demo(False)).pack(side="left")
         ttk.Button(run, text="Run full workflow (destructive)",
                    command=lambda: self._run_demo(True)).pack(side="left", padx=(8, 0))
-        ttk.Button(run, text="Stop", command=self._demo_stop_clicked)\
-            .pack(side="left", padx=(8, 0))
+        stop_frame = ttk.Frame(run)
+        stop_frame.pack(side="left", padx=(8, 0))
+        ttk.Button(stop_frame, text="Stop", command=self._demo_stop_clicked)\
+            .pack()
         ttk.Label(run, textvariable=self.demo_status_var)\
             .pack(side="left", padx=(16, 0))
+        settings_frame = ttk.Frame(run)
+        settings_frame.pack(side="right")
+        ttk.Button(settings_frame, text="Batch test settings",
+                   command=self._edit_workflow_settings)\
+            .pack()
 
         self.demo_progress = ttk.Progressbar(tab, mode="determinate")
         self.demo_progress.grid(row=2, column=0, sticky="ew", pady=(8, 0))
@@ -1015,6 +1647,26 @@ class PowerWriterGui:
             self._t("Found %d serial port(s), %d PowerWriter%s",
                     len(all_ports), len(powerwriter_ports), filtered))
 
+    def _configure_encryption(self) -> bool:
+        dialog = EncryptionDialog(
+            self.root, self._t, self.encrypt_key_hex, self.encrypt_iv_hex)
+        if dialog.result is None:
+            return False
+        self.encrypt_key_hex, self.encrypt_iv_hex = dialog.result
+        return True
+
+    def _on_encrypt_toggle(self) -> None:
+        if self.busy or (self.client is not None and self.client.is_open):
+            return
+        if self.encrypt_var.get():
+            if not self._configure_encryption():
+                self.encrypt_var.set(False)
+                return
+            self._append_log(
+                "info", self._t("AES encryption enabled; key and IV configured"))
+        else:
+            self._append_log("info", self._t("AES encryption disabled"))
+
     def _on_connect(self) -> None:
         if self.busy:
             return
@@ -1034,9 +1686,22 @@ class PowerWriterGui:
             return
 
         encrypt = bool(self.encrypt_var.get())
+        if encrypt and not (self.encrypt_key_hex and self.encrypt_iv_hex):
+            if not self._configure_encryption():
+                self.encrypt_var.set(False)
+                return
         self._set_busy(True, "Connecting...")
         self._set_conn_status("Connecting to %s ...", port, busy=True)
-        client = PowerWriterAT(encrypt=encrypt, log=self._log_cb)
+        try:
+            client = PowerWriterAT(
+                encrypt=encrypt, log=self._log_cb,
+                encrypt_key=(self.encrypt_key_hex or None) if encrypt else None,
+                encrypt_iv=(self.encrypt_iv_hex or None) if encrypt else None)
+        except ValueError as exc:
+            self._set_busy(False, "Ready")
+            self._set_conn_status("Not connected")
+            messagebox.showerror(self._t("Invalid parameter"), str(exc))
+            return
         self._append_log("info", self._t("Connecting to %s @ %d ...", port, baud))
 
         def worker():
@@ -1902,11 +2567,29 @@ class PowerWriterGui:
     # ==================================================================
     # Sample workflow
     # ==================================================================
+    def _edit_workflow_settings(self) -> None:
+        if self.busy:
+            messagebox.showinfo(
+                self._t("Please wait"),
+                self._t("An operation is in progress; cannot change settings right now"))
+            return
+        dialog = BatchTestSettingsDialog(
+            self.root, self._t, self.workflow_settings)
+        if dialog.result is not None:
+            self.workflow_settings = dialog.result
+            self._append_log(
+                "info", self._t("Batch test settings saved"))
+
     def _run_demo(self, destructive: bool) -> None:
         if self.client is None or not self.client.is_open:
             messagebox.showwarning(
                 self._t("Not connected"),
                 self._t("Connect the PowerWriter device first"))
+            return
+        try:
+            self.workflow_settings.validate()
+        except ValueError as exc:
+            messagebox.showerror(self._t("Invalid parameter"), str(exc))
             return
         if destructive and not messagebox.askyesno(
                 self._t("Confirm full workflow"),
@@ -1923,16 +2606,26 @@ class PowerWriterGui:
             self._post(lambda l=label, p=processed, t=total: self._set_progress(
                 self.demo_progress, self.demo_status_var, l, p, t))
 
+        project_path = self.proj_file_var.get().strip() or str(DEFAULT_PROJECT)
+        project_name = self.proj_name_var.get().strip()
+        if not project_name:
+            project_name = Path(project_path).name or DEFAULT_PROJECT_NAME
+        project_password = self.proj_password_var.get()
+        project_encoding = self.proj_encoding_var.get()
+
         def task():
             try:
                 run_sample_workflow(
                     self.client,
                     destructive=destructive,
-                    project_path=DEFAULT_PROJECT,
-                    project_name=DEFAULT_PROJECT_NAME,
+                    project_path=project_path,
+                    project_name=project_name,
                     log=self._log_cb,
                     progress=progress,
                     should_stop=self.demo_stop.is_set,
+                    settings=self.workflow_settings,
+                    project_password=project_password,
+                    project_name_encoding=project_encoding,
                 )
             except InterruptedError:
                 self._post(self._demo_stopped)

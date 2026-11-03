@@ -5,6 +5,7 @@
 
 #define PWAT_BRIDGE_EXPORTS
 #include "pwat_bridge.h"
+#include "pwat_crypto.h"
 
 #include "powerwriter_at_api.h"
 
@@ -117,6 +118,17 @@ PWAT_API void *pwat_create(int encrypt, PWAT_WRITE_CB write_cb,
         return NULL;
     }
     return ctx;
+}
+
+PWAT_API int pwat_set_encrypt_key_iv(void *handle, const uint8_t *key,
+                                     const uint8_t *iv)
+{
+    if (!handle)
+    {
+        return 0;
+    }
+    pwat_crypto_set_key_iv(key, iv);
+    return 1;
 }
 
 PWAT_API void pwat_destroy(void *handle)

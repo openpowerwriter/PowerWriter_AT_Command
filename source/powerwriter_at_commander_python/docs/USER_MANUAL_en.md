@@ -85,12 +85,33 @@ powerwriter_at_cli_python.exe --version
 | `--port COMx` | Serial port. If omitted, the program auto-selects a single PowerWriter. |
 | `--baud N` | Host serial baud rate. Default: `9600`. USB-CDC ignores this value. |
 | `--encrypt` | Enable AES128-CBC encrypted communication. Must match the device. |
+| `--encrypt-key HEX` | AES key: exactly 32 hex digits (16 bytes). Requires `--encrypt`. |
+| `--encrypt-iv HEX` | AES IV: exactly 32 hex digits (16 bytes). Requires `--encrypt`. |
 | `--debug` | Print AT frame transmit/receive debug logs. |
 | `--quiet` | Print warnings and errors only. |
 | `-V`, `--version` | Show the program version. |
 
 Global options can appear before or after a subcommand. In flat-flag mode they
 can appear anywhere in the argument list.
+
+#### AES128-CBC encrypted communication
+
+The PowerWriter AT command channel can use AES128-CBC. Enable it with
+`--encrypt` and provide the same 16-byte key and IV configured in the device.
+Both values accept 32 hexadecimal digits; spaces, commas, colons, hyphens and
+`0x` prefixes are ignored.
+
+```bat
+powerwriter_at_cli_python.exe --port COM3 ^
+  --encrypt ^
+  --encrypt-key 00112233445566778899AABBCCDDEEFF ^
+  --encrypt-iv 0102030405060708090A0B0C0D0E0F10 ^
+  info
+```
+
+The key and IV must be supplied together. If both are omitted with
+`--encrypt`, the C core's compile-time default key/IV is used. Keep in mind
+that command-line arguments may be visible in shell history or process lists.
 
 ### 4.3 Port discovery
 
@@ -219,7 +240,7 @@ powerwriter_at_cli_python.exe --port COM3 -offline-status
 --disable-power-ap {on,off,1,0}
 --run-ap {on,off,1,0}
 --power-on-debounce MS --power-off-debounce MS
---reset-pin {0,1,2}
+--reset-pin {0..7}
 ```
 
 Examples:
@@ -366,11 +387,18 @@ clarity.
 | `Serial port` | Port selection |
 | `Refresh` | Rescan serial ports |
 | `Baud rate` | Host baud rate; default `9600` |
-| `AES128-CBC encryption` | Enable encrypted communication |
+| `AES128-CBC encryption` | Enable encrypted communication and configure the key/IV |
 | `Connect` / `Disconnect` | Open or close the serial port |
 | `PowerWriter only` | Show only detected PowerWriter devices |
 | `Language` | GUI language selection |
 | Status line | Connection and operation status |
+
+Checking `AES128-CBC encryption` opens an encryption settings dialog. Enter the
+16-byte key and IV as 32 hex digits; use `Show` to reveal them and `Generate` to
+create a random pair. The generated values must also be written to the device.
+The dialog must be confirmed before the GUI can connect with encryption enabled.
+
+![Encryption settings dialog](images/gui_07_encryption.png)
 
 Enable AT mode in the PowerWriter device preferences and close other serial
 applications before connecting.
@@ -435,6 +463,19 @@ frame or wait for a response, then click `Send`. The response is shown below.
 Provides `Run safe workflow` (read-only steps) and
 `Run full workflow (destructive)` (erase/write/OptionByte/project/offline steps).
 `Stop` requests a stop between steps. The full workflow modifies the target.
+
+`Batch test settings` opens a parameter editor for both workflows. Every
+optional step has an enable switch. The three safe-workflow read ranges have
+their own address and size; the full workflow exposes reset type/delay,
+erase/write addresses and sizes, timeouts, broadcast data and factory-test
+switches. Loading and switching the offline project uses the current project
+file, name, password and encoding from the `Offline Programming` tab.
+
+`Save` writes the settings to the per-user GUI settings file; the values are
+restored automatically on the next start. `Restore defaults` restores the
+values from the C sample.
+
+![Batch test settings](images/gui_08_batch_settings.png)
 
 #### Log
 

@@ -273,6 +273,11 @@ def _configure(lib: ctypes.CDLL) -> None:
 
     lib.pwat_create.argtypes = [c_int, WRITE_CB, EVENT_CB, c_void_p]
     lib.pwat_create.restype = c_void_p
+    if hasattr(lib, "pwat_set_encrypt_key_iv"):
+        lib.pwat_set_encrypt_key_iv.argtypes = [
+            c_void_p, POINTER(c_uint8), POINTER(c_uint8)
+        ]
+        lib.pwat_set_encrypt_key_iv.restype = c_int
     lib.pwat_destroy.argtypes = [c_void_p]
     lib.pwat_destroy.restype = None
     lib.pwat_feed.argtypes = [c_void_p, POINTER(c_uint8), c_uint32]
@@ -436,6 +441,8 @@ class Bridge:
         write_fn: Callable[[bytes, int], bool],
         event_fn: Optional[Callable[[int], None]] = None,
         library_path: Optional[Path] = None,
+        encrypt_key: Optional[bytes] = None,
+        encrypt_iv: Optional[bytes] = None,
     ) -> None:
         self.library = lib
         self.library_path: Optional[Path] = library_path
@@ -453,6 +460,41 @@ class Bridge:
         )
         if not self._handle:
             raise PowerWriterATError(ATError.INITIAL_FAILED, "Failed to create AT channel")
+        if encrypt:
+            try:
+                self._set_encrypt_key_iv(encrypt_key, encrypt_iv)
+            except Exception:
+                self.close()
+                raise
+
+    def _set_encrypt_key_iv(
+        self, key: Optional[bytes], iv: Optional[bytes]
+    ) -> None:
+        """Set the runtime AES key/IV, or restore the C core defaults."""
+        if not hasattr(self.library, "pwat_set_encrypt_key_iv"):
+            if key is not None or iv is not None:
+                raise PowerWriterATError(
+                    ATError.INITIAL_FAILED,
+                    "The loaded C library does not support a custom AES key/IV; "
+                    "rebuild the bridge library",
+                )
+            return
+        if (key is None) != (iv is None):
+            raise ValueError("AES key and IV must be provided together")
+        if key is None:
+            key_buf = None
+            iv_buf = None
+        else:
+            key = bytes(key)
+            iv = bytes(iv)
+            if len(key) != 16 or len(iv) != 16:
+                raise ValueError("AES key and IV must be 16 bytes each")
+            key_buf = (c_uint8 * 16).from_buffer_copy(key)
+            iv_buf = (c_uint8 * 16).from_buffer_copy(iv)
+        if not self.library.pwat_set_encrypt_key_iv(
+                self._handle, key_buf, iv_buf):
+            raise PowerWriterATError(
+                ATError.INITIAL_FAILED, "Failed to configure AES key/IV")
 
     # ------------------------------------------------------------------
     def close(self) -> None:

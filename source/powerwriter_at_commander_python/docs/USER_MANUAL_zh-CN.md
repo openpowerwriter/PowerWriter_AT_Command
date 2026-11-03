@@ -80,11 +80,30 @@ powerwriter_at_cli_python.exe --version
 | `--port COMx` | 指定串口；不指定时自动选择唯一的 PowerWriter |
 | `--baud N` | 主机串口波特率，默认 `9600`；USB-CDC 可忽略 |
 | `--encrypt` | 启用 AES128-CBC 加密通信，必须与设备设置一致 |
+| `--encrypt-key HEX` | AES 密钥：正好 32 个十六进制字符（16 字节），需要配合 `--encrypt` |
+| `--encrypt-iv HEX` | AES 初始化向量 IV：正好 32 个十六进制字符（16 字节），需要配合 `--encrypt` |
 | `--debug` | 输出 AT 帧收发调试日志 |
 | `--quiet` | 只输出警告和错误 |
 | `-V`、`--version` | 显示版本 |
 
 全局选项可以写在子命令前后；扁平参数模式下可以写在任意位置。
+
+#### AES128-CBC 加密通信
+
+PowerWriter AT 命令通道支持 AES128-CBC。使用 `--encrypt` 启用，并通过
+`--encrypt-key` / `--encrypt-iv` 传入与设备一致的 16 字节密钥和 IV。两个参数
+都接受 32 个十六进制字符，空格、逗号、冒号、短横线和 `0x` 前缀会被忽略。
+
+```bat
+powerwriter_at_cli_python.exe --port COM3 ^
+  --encrypt ^
+  --encrypt-key 00112233445566778899AABBCCDDEEFF ^
+  --encrypt-iv 0102030405060708090A0B0C0D0E0F10 ^
+  info
+```
+
+密钥和 IV 必须同时提供。如果只指定 `--encrypt`，程序使用 C 核心编译时的默认
+密钥和 IV。请注意命令行参数可能出现在 shell 历史记录或进程列表中。
 
 ### 4.3 查找设备
 
@@ -213,7 +232,7 @@ powerwriter_at_cli_python.exe --port COM3 -offline-status
 --disable-power-ap {on,off,1,0}
 --run-ap {on,off,1,0}
 --power-on-debounce MS --power-off-debounce MS
---reset-pin {0,1,2}
+--reset-pin {0..7}
 ```
 
 示例：
@@ -350,11 +369,17 @@ powerwriter_at_gui_python.exe
 | `Serial port` | 选择串口 |
 | `Refresh` | 重新扫描串口 |
 | `Baud rate` | 主机波特率，默认 `9600` |
-| `AES128-CBC encryption` | 启用加密通信 |
+| `AES128-CBC encryption` | 启用加密通信并配置密钥/IV |
 | `Connect` / `Disconnect` | 打开或关闭串口 |
 | `PowerWriter only` | 只显示识别到的 PowerWriter |
 | `Language` | GUI 语言选择 |
 | 状态行 | 显示连接和操作状态 |
+
+勾选 `AES128-CBC encryption` 后会弹出加密设置对话框。输入 16 字节密钥和 IV
+（各 32 个十六进制字符）；`显示` 可查看明文，`生成` 可随机生成一组密钥和 IV。
+随机生成的值必须同时写入设备。只有确认对话框后，GUI 才能以加密方式连接。
+
+![加密设置对话框](images/gui_07_encryption.png)
 
 连接前请在 PowerWriter 设备首选项中开启 AT 模式，并关闭其他占用串口的程序。
 
@@ -412,6 +437,16 @@ powerwriter_at_gui_python.exe
 提供 `Run safe workflow`（只读步骤）和 `Run full workflow (destructive)`
 （擦除/写入/OptionByte/工程/离线流程）。`Stop` 会在步骤之间请求停止。
 完整流程会修改目标芯片。
+
+`Batch test settings` 打开参数配置窗口，两个流程的每个可选步骤都有启用开关。
+安全流程的三条读取区间可分别设置地址和大小；完整流程可设置复位类型/延时、
+擦除/写入地址和大小、超时时间、广播数据以及工厂测试开关。加载和切换工程时
+直接使用 `Offline Programming` 页当前工程的文件、名称、密码和编码。
+
+点击 `Save` 后参数会写入当前用户的 GUI 设置文件，下次启动自动恢复；
+`Restore defaults` 恢复 C 示例中的默认参数。
+
+![批量测试配置](images/gui_08_batch_settings.png)
 
 #### Log
 

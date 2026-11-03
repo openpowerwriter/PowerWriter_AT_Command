@@ -12,6 +12,10 @@ sys.path.insert(0, ROOT)
 import powerwriter_at_cli as cli
 from powerwriter_at_cli import build_parser
 from pw_at.serial_backend import SerialPortInfo
+from pw_at.utils import parse_aes_material
+
+AES_KEY = "00112233445566778899AABBCCDDEEFF"
+AES_IV = "0102030405060708090A0B0C0D0E0F10"
 
 
 class CliParserTests(unittest.TestCase):
@@ -55,6 +59,50 @@ class CliParserTests(unittest.TestCase):
         )
         self.assertEqual(args.total, 0x1000)
         self.assertEqual(args.port, "COM3")
+
+    def test_encryption_options_before_and_after_command(self):
+        args = self.parser.parse_args([
+            "--encrypt", "--encrypt-key", AES_KEY,
+            "--encrypt-iv", AES_IV, "info"])
+        self.assertTrue(args.encrypt)
+        self.assertEqual(args.encrypt_key, AES_KEY)
+        self.assertEqual(args.encrypt_iv, AES_IV)
+
+        args = self.parser.parse_args([
+            "info", "--encrypt",
+            "--encrypt-key=" + AES_KEY, "--encrypt-iv=" + AES_IV])
+        self.assertTrue(args.encrypt)
+        self.assertEqual(args.encrypt_key, AES_KEY)
+        self.assertEqual(args.encrypt_iv, AES_IV)
+
+    def test_cpp_style_encryption_options(self):
+        globals_, rest = cli._cpp_globals([
+            "--encrypt", "--encrypt-key", AES_KEY,
+            "--encrypt-iv", AES_IV, "-info"])
+        self.assertEqual(rest, ["-info"])
+        args = cli._cpp_args(globals_)
+        self.assertTrue(args.encrypt)
+        self.assertEqual(args.encrypt_key, AES_KEY)
+        self.assertEqual(args.encrypt_iv, AES_IV)
+
+    def test_parse_aes_key_formats(self):
+        expected = bytes.fromhex(AES_KEY)
+        self.assertEqual(parse_aes_material(AES_KEY), expected)
+        spaced = ", ".join("0x" + AES_KEY[i:i + 2]
+                           for i in range(0, 32, 2))
+        self.assertEqual(parse_aes_material(spaced), expected)
+        self.assertEqual(parse_aes_material(expected), expected)
+        for bad in ("", "00", "GG" * 16):
+            with self.assertRaises(ValueError):
+                parse_aes_material(bad)
+
+    def test_reset_pin_accepts_all_eight_modes(self):
+        for value in range(8):
+            args = self.parser.parse_args(
+                ["config-set", "--reset-pin", str(value)])
+            self.assertEqual(args.reset_pin, value)
+        with self.assertRaises(SystemExit):
+            self.parser.parse_args(["config-set", "--reset-pin", "8"])
 
     def test_list_powerwriter_option(self):
         args = self.parser.parse_args(["list", "--powerwriter"])

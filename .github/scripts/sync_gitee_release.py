@@ -28,7 +28,9 @@ DEFAULT_API = "https://gitee.com/api/v5"
 DEFAULT_OWNER = "openpowerwriter"
 DEFAULT_REPO = "PowerWriter_AT_Command"
 REQUEST_TIMEOUT = 300
-UPLOAD_TIMEOUT = int(os.environ.get("GITEE_UPLOAD_TIMEOUT", "1800"))
+# Gitee uploads from GitHub's overseas runners can be slow. The default is
+# intentionally generous; override it with GITEE_UPLOAD_TIMEOUT when needed.
+UPLOAD_TIMEOUT = int(os.environ.get("GITEE_UPLOAD_TIMEOUT", "3600"))
 
 
 class GiteeError(RuntimeError):

@@ -31,7 +31,7 @@ from pw_at import (
     WriterConfig,
     load_library,
 )
-from pw_at.demo import run_sample_workflow
+from pw_at.demo import SampleWorkflowSettings, run_sample_workflow
 import powerwriter_at_cli as cli
 
 DEMO_PKG = os.path.join(ROOT, "assets", "powerwriter_at_demo_project.pkg")
@@ -39,6 +39,8 @@ DEMO_PKG = os.path.join(ROOT, "assets", "powerwriter_at_demo_project.pkg")
 # Test-only AES key/IV, matching powerwriter_at_config.h in the C core
 ENC_KEY = bytes.fromhex("72C634F2CF2EF3D5F740DA5CEEBE4018")
 ENC_IV = bytes.fromhex("4BFEB618B2F1F1C92C7E4C376DF0B28A")
+CUSTOM_ENC_KEY = bytes.fromhex("00112233445566778899AABBCCDDEEFF")
+CUSTOM_ENC_IV = bytes.fromhex("0102030405060708090A0B0C0D0E0F10")
 
 STATUS_OK = 0x7FFFFFFF - 100
 STATUS_ERROR = STATUS_OK + 1
@@ -98,7 +100,7 @@ def parse_request(frame):
     return cmd, frame[16:16 + size]
 
 
-def make_encrypted_frame(cmd, prop=b""):
+def make_encrypted_frame(cmd, prop=b"", key=ENC_KEY, iv=ENC_IV):
     """Build an encrypted response frame (test only). CRC covers padded plaintext."""
     try:
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -108,11 +110,11 @@ def make_encrypted_frame(cmd, prop=b""):
     def make_cipher():
         try:
             # cryptography >= 3.x
-            return Cipher(algorithms.AES(ENC_KEY), modes.CBC(ENC_IV))
+            return Cipher(algorithms.AES(key), modes.CBC(iv))
         except TypeError:
             # older cryptography releases require an explicit backend
             from cryptography.hazmat.backends import default_backend
-            return Cipher(algorithms.AES(ENC_KEY), modes.CBC(ENC_IV),
+            return Cipher(algorithms.AES(key), modes.CBC(iv),
                           backend=default_backend())
 
     plain = struct.pack("<iI", cmd, len(prop)) + prop
@@ -332,6 +334,70 @@ class FFITests(unittest.TestCase):
         finally:
             bridge.close()
 
+    def test_encrypted_writer_info_custom_key(self):
+        info = (b"PWCUS\x00\x00\x00" + b"SN-CUSTOM".ljust(32, b"\x00") +
+                b"1.0.0\x00\x00\x00" + b"2.0.0\x00\x00\x00" + b"3.0.0\x00\x00\x00")
+        response = make_encrypted_frame(
+            CMD_RSP_WRITER_INFO, info, CUSTOM_ENC_KEY, CUSTOM_ENC_IV)
+        holder = {}
+
+        def write_fn(frame, timeout):
+            holder["bridge"].feed(response)
+            return True
+
+        bridge = Bridge(
+            self.lib, True, write_fn, library_path=self.path,
+            encrypt_key=CUSTOM_ENC_KEY, encrypt_iv=CUSTOM_ENC_IV)
+        holder["bridge"] = bridge
+        try:
+            value = bridge.get_writer_info()
+            self.assertEqual(value.oem, "PWCUS")
+            self.assertEqual(value.sn, "SN-CUSTOM")
+        finally:
+            bridge.close()
+            # Restore the compile-time defaults for any later test.
+            Bridge(self.lib, True, lambda frame, timeout: True,
+                   library_path=self.path).close()
+
+    def test_encrypted_writer_config_custom_key(self):
+        config = bytearray(70)
+        config[0:8] = b"Vendor\x00\x00"
+        config[16:24] = b"Series\x00\x00"
+        config[32:40] = b"Model\x00\x00\x00"
+        response = make_encrypted_frame(
+            CMD_RSP_WRITER_CFG, bytes(config), CUSTOM_ENC_KEY, CUSTOM_ENC_IV)
+        holder = {}
+
+        def write_fn(frame, timeout):
+            holder["bridge"].feed(response)
+            return True
+
+        bridge = Bridge(
+            self.lib, True, write_fn, library_path=self.path,
+            encrypt_key=CUSTOM_ENC_KEY, encrypt_iv=CUSTOM_ENC_IV)
+        holder["bridge"] = bridge
+        try:
+            value = bridge.get_writer_config()
+            self.assertEqual(value.target_vendor, "Vendor")
+            self.assertEqual(value.target_series, "Series")
+            self.assertEqual(value.target_model, "Model")
+        finally:
+            bridge.close()
+            Bridge(self.lib, True, lambda frame, timeout: True,
+                   library_path=self.path).close()
+
+    def test_custom_key_requires_encryption_and_both_values(self):
+        with self.assertRaises(ValueError):
+            PowerWriterAT(encrypt_key=CUSTOM_ENC_KEY, encrypt_iv=CUSTOM_ENC_IV)
+        with self.assertRaises(ValueError):
+            PowerWriterAT(
+                encrypt=True, encrypt_key=CUSTOM_ENC_KEY, encrypt_iv=None)
+        client = PowerWriterAT(
+            encrypt=True, encrypt_key=CUSTOM_ENC_KEY.hex(),
+            encrypt_iv=CUSTOM_ENC_IV.hex())
+        self.assertEqual(client.encrypt_key, CUSTOM_ENC_KEY)
+        self.assertEqual(client.encrypt_iv, CUSTOM_ENC_IV)
+
     def test_command_timeout_matches_core(self):
         # No response is provided; the C core must report ATErrorTimeout
         # after the requested 100 ms timeout.
@@ -500,6 +566,34 @@ class ClientTests(unittest.TestCase):
         self.assertTrue(any("Full sample workflow complete" in msg for _, msg in logs))
         self.assertTrue(any(label == "Write" and p == t for label, p, t in progress))
         self.assertTrue(any(label == "Offline programming" for label, _, _ in progress))
+
+    def test_destructive_sample_workflow_respects_step_switches(self):
+        logs = []
+        settings = SampleWorkflowSettings()
+        settings.reset_enabled = False
+        settings.write_vendor_ob_enabled = False
+        settings.full_erase_enabled = False
+        settings.sector_erase_enabled = False
+        settings.write_enabled = False
+        settings.read_ob_enabled = False
+        settings.write_user_ob_enabled = False
+        settings.broadcast_enabled = False
+        settings.factory_sram_enabled = False
+        settings.factory_flash_enabled = False
+        settings.load_project_enabled = False
+        settings.offline_start_enabled = False
+        settings.switch_project_enabled = False
+        run_sample_workflow(
+            self.pw, destructive=True, settings=settings,
+            log=lambda level, msg: logs.append((level, msg)))
+        text = "\n".join(msg for _level, msg in logs)
+        for marker in (
+            "=== 6.", "=== 7.", "=== 8.", "=== 9.", "=== 10.",
+            "=== 11.", "=== 12.", "=== 13.", "=== 14.", "=== 15.",
+            "=== 16.", "=== 17.",
+        ):
+            self.assertNotIn(marker, text)
+        self.assertIn("Full sample workflow complete", text)
 
 
 class ErrorMatrixTests(unittest.TestCase):

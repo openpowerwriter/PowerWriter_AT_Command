@@ -125,6 +125,11 @@ typedef struct PWAT_BROADCAST {
 PWAT_API uint32_t pwat_version(void);
 PWAT_API void    *pwat_create(int encrypt, PWAT_WRITE_CB write_cb,
                               PWAT_EVENT_CB event_cb, void *user);
+/* Configure the global AES128-CBC key and IV (16 bytes each). Pass NULL for
+ * both to restore the C core defaults. Call before starting commands. */
+PWAT_API int      pwat_set_encrypt_key_iv(void *handle,
+                                          const uint8_t *key,
+                                          const uint8_t *iv);
 PWAT_API void     pwat_destroy(void *handle);
 PWAT_API int      pwat_feed(void *handle, const uint8_t *data, uint32_t size);
 PWAT_API uint32_t pwat_last_error(void *handle);

@@ -21,6 +21,7 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, HERE)
 
 from pw_at import ATError, PowerWriterAT   # noqa: E402
+from pw_at.demo import SampleWorkflowSettings  # noqa: E402
 from pw_at.i18n import LANGUAGE_NAMES      # noqa: E402
 from pw_at.models import WriterConfig      # noqa: E402
 from test_bridge import (                  # noqa: E402
@@ -90,6 +91,7 @@ class GuiSimulationTests(unittest.TestCase):
 
         self.app = gui_module.PowerWriterGui(
             self.root, language="en", maximized=False)
+        self.app.workflow_settings = SampleWorkflowSettings()
         self.device = FakeDevice()
         self.client = PowerWriterAT(log=self.app._log_cb)
         self.transport = LoopTransport(None, self.device)
@@ -315,6 +317,34 @@ class GuiSimulationTests(unittest.TestCase):
         self.assertIn("Русский", values)
         self.assertIn("हिन्दी", values)
         self.assertGreaterEqual(int(app.language_combo.cget("height")), 24)
+
+    def test_encryption_toggle_requires_and_stores_key_iv(self):
+        app = self.app
+        app.client = None
+
+        app._configure_encryption = lambda: False
+        app.encrypt_var.set(True)
+        app._on_encrypt_toggle()
+        self.assertFalse(app.encrypt_var.get())
+
+        key = "00112233445566778899AABBCCDDEEFF"
+        iv = "0102030405060708090A0B0C0D0E0F10"
+
+        def configure():
+            app.encrypt_key_hex = key
+            app.encrypt_iv_hex = iv
+            return True
+
+        app._configure_encryption = configure
+        app.encrypt_var.set(True)
+        app._on_encrypt_toggle()
+        self.assertTrue(app.encrypt_var.get())
+        self.assertEqual(app.encrypt_key_hex, key)
+        self.assertEqual(app.encrypt_iv_hex, iv)
+
+        app.encrypt_var.set(False)
+        app._on_encrypt_toggle()
+        self.assertFalse(app.encrypt_var.get())
 
     def test_reset_pin_config_accepts_all_modes(self):
         app = self.app

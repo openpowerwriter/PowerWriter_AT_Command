@@ -32,6 +32,7 @@ from .constants import (
 )
 from .errors import PowerWriterATError
 from .ffi import Bridge, load_library
+from .utils import parse_aes_material
 from .models import (
     BroadcastResponse,
     MemoryBlock,
@@ -63,8 +64,24 @@ class PowerWriterAT:
         self,
         encrypt: bool = False,
         log: Optional[LogCallback] = None,
+        encrypt_key=None,
+        encrypt_iv=None,
     ) -> None:
         self.encrypt = bool(encrypt)
+        if encrypt_key is not None or encrypt_iv is not None:
+            if not self.encrypt:
+                raise ValueError(
+                    "AES key/IV require encrypted communication to be enabled")
+            if encrypt_key is None or encrypt_iv is None:
+                raise ValueError("AES key and IV must be provided together")
+            self.encrypt_key: Optional[bytes] = parse_aes_material(
+                encrypt_key, "AES key")
+            self.encrypt_iv: Optional[bytes] = parse_aes_material(
+                encrypt_iv, "AES IV")
+        else:
+            self.encrypt_key = None
+            self.encrypt_iv = None
+
         self.writer_info: Optional[WriterInfo] = None
         self.port: Optional[str] = None
         self.baudrate = PW_AT_DEFAULT_BAUDRATE
@@ -148,6 +165,8 @@ class PowerWriterAT:
             self._write_frame,
             self._on_event,
             library_path=path,
+            encrypt_key=self.encrypt_key,
+            encrypt_iv=self.encrypt_iv,
         )
         self._bridge = bridge
         try:

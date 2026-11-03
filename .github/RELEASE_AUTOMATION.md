@@ -35,6 +35,11 @@ Gitee Go only provides Linux build images, so Windows and macOS binaries are
 built on GitHub and then mirrored to Gitee. Native Gitee Go release jobs are not
 used for those platforms.
 
+Gitee uploads are sequential and can be slow from GitHub's overseas runners.
+Each file has a 60-minute timeout by default (`GITEE_UPLOAD_TIMEOUT=3600`).
+Increase that value if a release asset still times out; the manual repair
+workflow allows up to five hours.
+
 ## Repair an existing release
 
 `workflows/sync_release_assets.yml` can rebuild the platform ZIPs from an

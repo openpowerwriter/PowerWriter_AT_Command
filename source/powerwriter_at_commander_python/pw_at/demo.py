@@ -26,8 +26,9 @@ from __future__ import annotations
 
 import os
 import time
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Dict, List, Optional
 
 from .constants import ATError, ResetType
 from .errors import PowerWriterATError
@@ -36,6 +37,214 @@ from .utils import resource_root
 
 DEFAULT_PROJECT = resource_root() / "assets" / "powerwriter_at_demo_project.pkg"
 DEFAULT_PROJECT_NAME = "PowerWriter_test_project.pkg"
+
+
+@dataclass
+class ReadRangeSettings:
+    """One target-memory read in the safe workflow."""
+
+    enabled: bool = True
+    label: str = ""
+    address: int = 0
+    size: int = 0
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data, fallback: "ReadRangeSettings") -> "ReadRangeSettings":
+        if not isinstance(data, dict):
+            return replace(fallback)
+        return cls(
+            enabled=bool(data.get("enabled", fallback.enabled)),
+            label=str(data.get("label", fallback.label)),
+            address=_as_int(data.get("address"), fallback.address),
+            size=_as_int(data.get("size"), fallback.size),
+        )
+
+
+DEFAULT_READ_RANGES = (
+    ReadRangeSettings(True, "2-byte SRAM", 0x20001000, 2),
+    ReadRangeSettings(True, "32-byte Flash", 0x08001000, 32),
+    ReadRangeSettings(True, "32-byte SRAM", 0x20001020, 32),
+)
+
+
+@dataclass
+class SampleWorkflowSettings:
+    """Parameters used by run_sample_workflow().
+
+    The defaults reproduce powerwriter_at_samples.c. The GUI uses the same
+    object to expose optional steps and hardware-specific addresses/sizes.
+    """
+
+    connect_timeout_s: float = 10.0
+    reconnect_timeout_s: float = 10.0
+    read_ranges: List[ReadRangeSettings] = field(
+        default_factory=lambda: [replace(item) for item in DEFAULT_READ_RANGES])
+
+    reset_enabled: bool = True
+    reset_type: int = int(ResetType.HW_CORE_RESET)
+    reset_delay_ms: int = 200
+
+    write_vendor_ob_enabled: bool = True
+    write_vendor_ob_timeout_ms: int = 5000
+
+    full_erase_enabled: bool = True
+    full_erase_timeout_ms: int = 10000
+
+    sector_erase_enabled: bool = True
+    sector_erase_address: int = 0x080015FF
+    sector_erase_size: int = 0x1002
+    sector_erase_timeout_ms: int = 10000
+
+    write_enabled: bool = True
+    write_address: int = 0x08000000
+    write_size: int = 0x20000
+
+    read_ob_enabled: bool = True
+
+    write_user_ob_enabled: bool = True
+    write_user_ob_timeout_ms: int = 5000
+
+    broadcast_enabled: bool = True
+    broadcast_data: str = "Hello powerwriter AT\\r\\n"
+    broadcast_direction: int = 0
+    broadcast_keep_frame: bool = False
+    broadcast_wait_rsp: bool = False
+    broadcast_timeout_ms: int = 5000
+
+    factory_sram_enabled: bool = True
+    factory_sram_timeout_ms: int = 5000
+    factory_flash_enabled: bool = True
+    factory_flash_timeout_ms: int = 5000
+
+    load_project_enabled: bool = True
+    offline_start_enabled: bool = True
+    offline_timeout_s: int = 120
+    switch_project_enabled: bool = True
+    switch_reload: bool = True
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data) -> "SampleWorkflowSettings":
+        defaults = cls()
+        if not isinstance(data, dict):
+            return defaults
+
+        def get_bool(name: str) -> bool:
+            return bool(data.get(name, getattr(defaults, name)))
+
+        def get_int(name: str) -> int:
+            return _as_int(data.get(name), getattr(defaults, name))
+
+        def get_float(name: str) -> float:
+            value = data.get(name, getattr(defaults, name))
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return float(getattr(defaults, name))
+
+        ranges_data = data.get("read_ranges")
+        ranges = []
+        for index, fallback in enumerate(DEFAULT_READ_RANGES):
+            item = None
+            if isinstance(ranges_data, list) and index < len(ranges_data):
+                item = ranges_data[index]
+            ranges.append(ReadRangeSettings.from_dict(item, fallback))
+
+        return cls(
+            connect_timeout_s=get_float("connect_timeout_s"),
+            reconnect_timeout_s=get_float("reconnect_timeout_s"),
+            read_ranges=ranges,
+            reset_enabled=get_bool("reset_enabled"),
+            reset_type=get_int("reset_type"),
+            reset_delay_ms=get_int("reset_delay_ms"),
+            write_vendor_ob_enabled=get_bool("write_vendor_ob_enabled"),
+            write_vendor_ob_timeout_ms=get_int("write_vendor_ob_timeout_ms"),
+            full_erase_enabled=get_bool("full_erase_enabled"),
+            full_erase_timeout_ms=get_int("full_erase_timeout_ms"),
+            sector_erase_enabled=get_bool("sector_erase_enabled"),
+            sector_erase_address=get_int("sector_erase_address"),
+            sector_erase_size=get_int("sector_erase_size"),
+            sector_erase_timeout_ms=get_int("sector_erase_timeout_ms"),
+            write_enabled=get_bool("write_enabled"),
+            write_address=get_int("write_address"),
+            write_size=get_int("write_size"),
+            read_ob_enabled=get_bool("read_ob_enabled"),
+            write_user_ob_enabled=get_bool("write_user_ob_enabled"),
+            write_user_ob_timeout_ms=get_int("write_user_ob_timeout_ms"),
+            broadcast_enabled=get_bool("broadcast_enabled"),
+            broadcast_data=str(data.get("broadcast_data", defaults.broadcast_data)),
+            broadcast_direction=get_int("broadcast_direction"),
+            broadcast_keep_frame=get_bool("broadcast_keep_frame"),
+            broadcast_wait_rsp=get_bool("broadcast_wait_rsp"),
+            broadcast_timeout_ms=get_int("broadcast_timeout_ms"),
+            factory_sram_enabled=get_bool("factory_sram_enabled"),
+            factory_sram_timeout_ms=get_int("factory_sram_timeout_ms"),
+            factory_flash_enabled=get_bool("factory_flash_enabled"),
+            factory_flash_timeout_ms=get_int("factory_flash_timeout_ms"),
+            load_project_enabled=get_bool("load_project_enabled"),
+            offline_start_enabled=get_bool("offline_start_enabled"),
+            offline_timeout_s=get_int("offline_timeout_s"),
+            switch_project_enabled=get_bool("switch_project_enabled"),
+            switch_reload=get_bool("switch_reload"),
+        )
+
+    def validate(self) -> None:
+        if self.connect_timeout_s <= 0 or self.reconnect_timeout_s <= 0:
+            raise ValueError("Connect timeouts must be greater than zero")
+        if not 0 <= self.reset_type <= 7:
+            raise ValueError("Reset type must be between 0 and 7")
+        if self.reset_delay_ms < 0:
+            raise ValueError("Reset delay cannot be negative")
+        checks = (
+            (self.write_vendor_ob_enabled, "write_vendor_ob_timeout_ms"),
+            (self.full_erase_enabled, "full_erase_timeout_ms"),
+            (self.sector_erase_enabled, "sector_erase_timeout_ms"),
+            (self.write_user_ob_enabled, "write_user_ob_timeout_ms"),
+            (self.broadcast_enabled, "broadcast_timeout_ms"),
+            (self.factory_sram_enabled, "factory_sram_timeout_ms"),
+            (self.factory_flash_enabled, "factory_flash_timeout_ms"),
+        )
+        for enabled, name in checks:
+            if enabled and getattr(self, name) <= 0:
+                raise ValueError("%s must be greater than zero" % name)
+        if self.offline_start_enabled and self.offline_timeout_s <= 0:
+            raise ValueError("Offline timeout must be greater than zero")
+        if self.sector_erase_enabled and (
+                self.sector_erase_address < 0 or self.sector_erase_size <= 0):
+            raise ValueError("Sector erase address/size is invalid")
+        if self.write_enabled and (
+                self.write_address < 0 or self.write_size <= 0):
+            raise ValueError("Write address/size is invalid")
+        for index, item in enumerate(self.read_ranges, 1):
+            if item.address < 0 or item.size < 0:
+                raise ValueError("Read range %d address/size is invalid" % index)
+            if item.enabled and item.size <= 0:
+                raise ValueError("Read range %d size must be greater than zero" % index)
+        if self.broadcast_direction not in (0, 1):
+            raise ValueError("Broadcast direction must be 0 or 1")
+        if self.broadcast_enabled and not _decode_escapes(self.broadcast_data):
+            raise ValueError("Broadcast data cannot be empty")
+
+
+def _as_int(value, fallback: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return int(fallback)
+
+
+def _decode_escapes(text: str) -> str:
+    """Allow \\r, \\n, \\t and \\\\ in the broadcast setting."""
+    return (str(text)
+            .replace("\\r", "\r")
+            .replace("\\n", "\n")
+            .replace("\\t", "\t")
+            .replace("\\\\", "\\"))
 
 INTRODUCTION = """
 PowerWriter open communication interface
@@ -135,14 +344,21 @@ def run_sample_workflow(
     log: Optional[LogFn] = None,
     progress: Optional[ProgressFn] = None,
     should_stop: Optional[StopFn] = None,
+    settings: Optional[SampleWorkflowSettings] = None,
+    project_password: str = "",
+    project_name_encoding: Optional[str] = None,
 ) -> None:
     """
     Run the workflow corresponding to powerwriter_at_samples.c.
 
     With destructive=False only safe steps are executed (information, connect,
     chip ID, memory reads). With destructive=True the full erase/write/
-    OptionByte/offline-project sequence is executed.
+    OptionByte/offline-project sequence is executed. ``settings`` allows the
+    GUI to enable/disable individual steps and supply hardware-specific
+    addresses, sizes and timeouts.
     """
+    cfg = settings or SampleWorkflowSettings()
+
     def emit(level: str, message: str) -> None:
         if log:
             log(level, message)
@@ -168,7 +384,7 @@ def run_sample_workflow(
     check_stop()
     emit("info", "=== 3. Connect target chip ===")
     device.target_connect()
-    if not wait_target_connected(device, 10, should_stop):
+    if not wait_target_connected(device, cfg.connect_timeout_s, should_stop):
         raise PowerWriterATError(ATError.TARGET_CONNECT, "Timed out connecting to target chip")
     emit("info", "Target chip connected")
 
@@ -178,9 +394,8 @@ def run_sample_workflow(
 
     emit("info", "=== 5. Target memory read example ===")
     for address, size, name in [
-        (0x20001000, 2, "2-byte SRAM"),
-        (0x08001000, 32, "32-byte Flash"),
-        (0x20001020, 32, "32-byte SRAM"),
+        (item.address, item.size, item.label)
+        for item in cfg.read_ranges if item.enabled and item.size > 0
     ]:
         try:
             data = device.target_read(address, size)
@@ -194,85 +409,121 @@ def run_sample_workflow(
         emit("info", "Safe workflow complete (target chip not modified).")
         return
 
-    emit("info", "=== 6. Reset target chip and reconnect ===")
-    device.target_reset(ResetType.HW_CORE_RESET)
-    time.sleep(0.2)
-    device.target_connect()
-    if not wait_target_connected(device, 10, should_stop):
-        raise PowerWriterATError(ATError.TARGET_CONNECT, "Failed to reconnect to target chip after reset")
-    emit("info", "Target chip reconnected")
+    if cfg.reset_enabled:
+        emit("info", "=== 6. Reset target chip and reconnect ===")
+        device.target_reset(cfg.reset_type)
+        time.sleep(max(0, cfg.reset_delay_ms) / 1000.0)
+        device.target_connect()
+        if not wait_target_connected(device, cfg.reconnect_timeout_s, should_stop):
+            raise PowerWriterATError(ATError.TARGET_CONNECT, "Failed to reconnect to target chip after reset")
+        emit("info", "Target chip reconnected")
 
     check_stop()
-    emit("info", "=== 7. Write vendor default OptionByte ===")
-    device.target_write_vendor_ob()
+    if cfg.write_vendor_ob_enabled:
+        emit("info", "=== 7. Write vendor default OptionByte ===")
+        device.target_write_vendor_ob(cfg.write_vendor_ob_timeout_ms)
 
-    emit("info", "=== 8. Full-chip erase ===")
-    device.target_erase(10000)
+    if cfg.full_erase_enabled:
+        emit("info", "=== 8. Full-chip erase ===")
+        device.target_erase(cfg.full_erase_timeout_ms)
 
-    emit("info", "=== 9. Sector erase ===")
-    device.target_erase_sector(0x080015FF, 0x1002, 10000)
-
-    check_stop()
-    emit("info", "=== 10. Write 128 KB test data (write prepare + chunked write) ===")
-    blob = os.urandom(0x20000)
-    device.target_write_prepare(len(blob))
-    device.target_write(0x08000000, blob, prepare=False,
-                        progress=lambda p, t: report("Write", p, t))
-    report("Write", len(blob), len(blob))
-
-    emit("info", "=== 11. Read target OptionByte ===")
-    ob = device.target_read_ob()
-    emit("info", "OptionByte (%d bytes): %s" % (
-        len(ob.data), " ".join("%02X" % b for b in ob.data)))
-
-    emit("info", "=== 12. Write user OptionByte ===")
-    device.target_write_user_ob()
-
-    emit("info", "=== 13. Broadcast (no response required) ===")
-    device.broadcast(b"Hello powerwriter AT\r\n", keep_frame=False, wait_rsp=False)
-    emit("info", "Broadcast sent")
-
-    emit("info", "=== 14. Run factory SRAM / Flash firmware ===")
-    device.factory_run_sram_fw()
-    device.factory_run_flash_fw()
+    if cfg.sector_erase_enabled:
+        emit("info", "=== 9. Sector erase ===")
+        device.target_erase_sector(
+            cfg.sector_erase_address, cfg.sector_erase_size,
+            cfg.sector_erase_timeout_ms)
 
     check_stop()
-    emit("info", "=== 15. Load offline project ===")
-    project = Path(project_path)
-    if not project.is_file():
-        raise FileNotFoundError("Offline project file not found: %s" % project)
-    device.project_load(
-        project_name,
-        project.read_bytes(),
-        progress=lambda p, t: report("Load project", p, t),
-    )
-    project_info = device.project_info()
-    emit("info", "Project status: %s, %d bytes, CRC32=0x%08X" % (
-        "valid" if project_info.active else "invalid",
-        project_info.size, project_info.crc32))
+    if cfg.write_enabled:
+        emit("info", "=== 10. Write test data (write prepare + chunked write) ===")
+        blob = os.urandom(max(1, cfg.write_size))
+        device.target_write_prepare(len(blob))
+        device.target_write(cfg.write_address, blob, prepare=False,
+                            progress=lambda p, t: report("Write", p, t))
+        report("Write", len(blob), len(blob))
+
+    if cfg.read_ob_enabled:
+        emit("info", "=== 11. Read target OptionByte ===")
+        ob = device.target_read_ob()
+        emit("info", "OptionByte (%d bytes): %s" % (
+            len(ob.data), " ".join("%02X" % b for b in ob.data)))
+
+    if cfg.write_user_ob_enabled:
+        emit("info", "=== 12. Write user OptionByte ===")
+        device.target_write_user_ob(cfg.write_user_ob_timeout_ms)
+
+    if cfg.broadcast_enabled:
+        emit("info", "=== 13. Broadcast ===")
+        broadcast_data = _decode_escapes(cfg.broadcast_data).encode("utf-8")
+        response = device.broadcast(
+            broadcast_data,
+            direction=cfg.broadcast_direction,
+            keep_frame=cfg.broadcast_keep_frame,
+            wait_rsp=cfg.broadcast_wait_rsp,
+            timeout_ms=cfg.broadcast_timeout_ms,
+        )
+        if cfg.broadcast_wait_rsp and response is not None:
+            emit("info", "Broadcast response: %s" % response.data.hex())
+        else:
+            emit("info", "Broadcast sent")
+
+    if cfg.factory_sram_enabled:
+        emit("info", "=== 14. Run factory SRAM firmware ===")
+        device.factory_run_sram_fw(cfg.factory_sram_timeout_ms)
+    if cfg.factory_flash_enabled:
+        emit("info", "=== 14. Run factory Flash firmware ===")
+        device.factory_run_flash_fw(cfg.factory_flash_timeout_ms)
 
     check_stop()
-    emit("info", "=== 16. Start offline programming and poll status ===")
-    device.offline_start()
-    deadline = time.monotonic() + 120
-    while time.monotonic() < deadline:
-        check_stop()
-        status = device.offline_status()
-        if status.state == OfflineState.OK:
-            emit("info", "Offline programming complete")
-            break
-        if status.failed:
-            raise PowerWriterATError(status.error_code, "Offline programming failed")
-        if status.progress and status.progress.total:
-            if status.progress.processed > status.progress.total:
-                emit("info", "Preparing offline programming...")
-            else:
-                report("Offline programming", status.progress.processed,
-                       status.progress.total)
-        time.sleep(0.3)
-    else:
-        raise TimeoutError("Timed out waiting for offline programming status")
+    project_info = None
+    if cfg.load_project_enabled:
+        emit("info", "=== 15. Load offline project ===")
+        project = Path(project_path)
+        if not project.is_file():
+            raise FileNotFoundError("Offline project file not found: %s" % project)
+        device.project_load(
+            project_name,
+            project.read_bytes(),
+            password=project_password,
+            progress=lambda p, t: report("Load project", p, t),
+            name_encoding=project_name_encoding,
+        )
+    if (cfg.load_project_enabled or cfg.offline_start_enabled
+            or cfg.switch_project_enabled):
+        project_info = device.project_info()
+        emit("info", "Project status: %s, %d bytes, CRC32=0x%08X" % (
+            "valid" if project_info.active else "invalid",
+            project_info.size, project_info.crc32))
 
-    emit("info", "=== 17. Switch offline project ===")
-    device.project_switch(project_name, reload=True)
+    check_stop()
+    if cfg.offline_start_enabled:
+        emit("info", "=== 16. Start offline programming and poll status ===")
+        device.offline_start()
+        deadline = time.monotonic() + max(1, cfg.offline_timeout_s)
+        while time.monotonic() < deadline:
+            check_stop()
+            status = device.offline_status()
+            if status.state == OfflineState.OK:
+                emit("info", "Offline programming complete")
+                break
+            if status.failed:
+                raise PowerWriterATError(status.error_code, "Offline programming failed")
+            if status.progress and status.progress.total:
+                if status.progress.processed > status.progress.total:
+                    emit("info", "Preparing offline programming...")
+                else:
+                    report("Offline programming", status.progress.processed,
+                           status.progress.total)
+            time.sleep(0.3)
+        else:
+            raise TimeoutError("Timed out waiting for offline programming status")
+
+    if cfg.switch_project_enabled:
+        emit("info", "=== 17. Switch offline project ===")
+        device.project_switch(
+            project_name,
+            password=project_password,
+            reload=cfg.switch_reload,
+            name_encoding=project_name_encoding,
+        )
     emit("info", "Full sample workflow complete.")

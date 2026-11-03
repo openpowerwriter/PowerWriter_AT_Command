@@ -119,10 +119,15 @@ def choose_port(port: str | None) -> str:
 @contextmanager
 def open_device(args, log=None):
     port = choose_port(getattr(args, "port", None))
-    device = PowerWriterAT(
-        encrypt=getattr(args, "encrypt", False),
-        log=log if log is not None else make_logger(args),
-    )
+    try:
+        device = PowerWriterAT(
+            encrypt=getattr(args, "encrypt", False),
+            log=log if log is not None else make_logger(args),
+            encrypt_key=getattr(args, "encrypt_key", None),
+            encrypt_iv=getattr(args, "encrypt_iv", None),
+        )
+    except ValueError as exc:
+        raise SystemExit(str(exc))
     try:
         device.open_serial(port, getattr(args, "baud", 9600))
     except PowerWriterATError as exc:
@@ -627,6 +632,7 @@ PowerWriter AT Commander (C++ CLI compatible flags)
 ===================================================
 Usage:
   powerwriter_at_cli.py [--port COMx] [--baud 9600] [-command [args]]
+  Add --encrypt --encrypt-key HEX --encrypt-iv HEX for encrypted devices.
 
 Commands:
   -info                Read writer information
@@ -689,10 +695,10 @@ def _cpp_globals(tokens: list[str]) -> tuple[dict, list[str]]:
     i = 0
     while i < len(tokens):
         token = tokens[i]
-        if token in ("--port", "--baud"):
+        if token in ("--port", "--baud", "--encrypt-key", "--encrypt-iv"):
             if i + 1 >= len(tokens):
                 raise SystemExit("%s is missing a value" % token)
-            values[token[2:]] = tokens[i + 1]
+            values[token[2:].replace("-", "_")] = tokens[i + 1]
             i += 2
             continue
         if token.startswith("--port="):
@@ -701,6 +707,14 @@ def _cpp_globals(tokens: list[str]) -> tuple[dict, list[str]]:
             continue
         if token.startswith("--baud="):
             values["baud"] = token.split("=", 1)[1]
+            i += 1
+            continue
+        if token.startswith("--encrypt-key="):
+            values["encrypt_key"] = token.split("=", 1)[1]
+            i += 1
+            continue
+        if token.startswith("--encrypt-iv="):
+            values["encrypt_iv"] = token.split("=", 1)[1]
             i += 1
             continue
         if token in ("--encrypt", "--debug", "--quiet"):
@@ -778,6 +792,8 @@ def _cpp_args(globals_: dict, **kwargs) -> argparse.Namespace:
         port=globals_.get("port"),
         baud=int(globals_.get("baud", 9600)),
         encrypt=bool(globals_.get("encrypt", False)),
+        encrypt_key=globals_.get("encrypt_key"),
+        encrypt_iv=globals_.get("encrypt_iv"),
         debug=bool(globals_.get("debug", False)),
         quiet=bool(globals_.get("quiet", False)),
         **kwargs,
@@ -961,10 +977,12 @@ def _first_is_cpp(argv: list[str]) -> bool:
     i = 0
     while i < len(argv):
         token = argv[i]
-        if token in ("--port", "--baud"):
+        if token in ("--port", "--baud", "--encrypt-key", "--encrypt-iv"):
             i += 2
             continue
-        if token.startswith("--port=") or token.startswith("--baud="):
+        if (token.startswith("--port=") or token.startswith("--baud=")
+                or token.startswith("--encrypt-key=")
+                or token.startswith("--encrypt-iv=")):
             i += 1
             continue
         if token in ("--encrypt", "--debug", "--quiet", "-enable_debug"):
@@ -1012,6 +1030,10 @@ def add_common(parser: argparse.ArgumentParser, suppress: bool = False) -> None:
                         help="Baud rate (default 9600)")
     parser.add_argument("--encrypt", action="store_true", default=default(False),
                         help="Enable AES128-CBC encrypted communication")
+    parser.add_argument("--encrypt-key", metavar="HEX", default=default(None),
+                        help="AES key: 32 hex digits (requires --encrypt)")
+    parser.add_argument("--encrypt-iv", metavar="HEX", default=default(None),
+                        help="AES IV: 32 hex digits (requires --encrypt)")
     parser.add_argument("--debug", action="store_true", default=default(False),
                         help="Output communication debug logs")
     parser.add_argument("--quiet", action="store_true", default=default(False),
@@ -1069,7 +1091,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--run-ap", choices=sorted(BOOL_MAP), help="Run after programming")
     p.add_argument("--power-on-debounce", type=int, help="Power-on debounce (ms)")
     p.add_argument("--power-off-debounce", type=int, help="Power-off debounce (ms)")
-    p.add_argument("--reset-pin", type=int, choices=[0, 1, 2], help="Reset pin control")
+    p.add_argument("--reset-pin", type=int, choices=list(range(8)),
+                   help="Reset pin control mode (0-7, same as online reset)")
     p.set_defaults(func=cmd_config_set)
 
     p = sub.add_parser("set-baud", help="Set the device AT baud rate")

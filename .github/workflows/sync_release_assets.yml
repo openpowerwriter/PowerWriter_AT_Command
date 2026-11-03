@@ -20,7 +20,7 @@ jobs:
   sync:
     name: Repair and sync release assets
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 300
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,7 +57,7 @@ jobs:
           GITEE_OWNER: openpowerwriter
           GITEE_REPO: PowerWriter_AT_Command
           GITEE_TARGET_COMMITISH: main
-          GITEE_UPLOAD_TIMEOUT: "1800"
+          GITEE_UPLOAD_TIMEOUT: "3600"
         run: |
           python .github/scripts/sync_gitee_release.py \
             --event release.json \

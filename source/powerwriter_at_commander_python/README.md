@@ -35,6 +35,7 @@ powerwriter_at_commander_python/
 ├── csrc/
 │   ├── pwat_bridge.h           # 扁平 C ABI（供 ctypes 调用）
 │   ├── pwat_bridge.c           # 调用 powerwriter_at_core / 回调转换
+│   ├── pwat_crypto.c/h         # 运行时 AES128-CBC Key/IV
 │   └── pwat_port.c             # 跨平台时钟、休眠、CRC32
 ├── pw_at/
 │   ├── ffi.py                  # 动态库自动查找 + ctypes 绑定
@@ -42,6 +43,7 @@ powerwriter_at_commander_python/
 │   ├── serial_backend.py       # 标准库串口后端（Win32 / termios）
 │   ├── transport.py            # 串口读线程 + 发送锁
 │   ├── demo.py                 # 与 powerwriter_at_samples.c 对应的示例流程
+│   ├── workflow_settings.py    # 批量测试参数持久化
 │   ├── models.py               # 数据模型
 │   ├── constants.py            # 错误码、配置枚举、界面标签
 │   ├── errors.py / utils.py
@@ -163,12 +165,21 @@ python powerwriter_at_cli.py --port COM3 config-get  # 读取配置
 python powerwriter_at_cli.py --port COM3 set-baud 115200
 ```
 
-`--port`、`--baud`、`--encrypt`、`--debug`、`--quiet` 可以写在子命令
-前面或后面：
+`--port`、`--baud`、`--encrypt`、`--encrypt-key`、`--encrypt-iv`、
+`--debug`、`--quiet` 可以写在子命令前面或后面：
 
 ```bash
 python powerwriter_at_cli.py --port COM3 info
 python powerwriter_at_cli.py info --port COM3
+```
+
+加密设备需要同时提供与设备一致的 16 字节 AES Key 和 IV（各 32 个十六进制
+字符）：
+
+```bash
+python powerwriter_at_cli.py --port COM3 --encrypt \
+  --encrypt-key 00112233445566778899AABBCCDDEEFF \
+  --encrypt-iv 0102030405060708090A0B0C0D0E0F10 info
 ```
 
 ### C++ CLI 风格参数（兼容）
@@ -304,6 +315,13 @@ python powerwriter_at_gui.py
 | 日志 | 通信帧、错误、进度；可保存 |
 
 所有耗时操作在后台线程执行，界面不会卡死；破坏性操作会二次确认。
+勾选连接栏的 `AES128-CBC encryption` 会弹出密钥/IV 配置对话框，支持显示明文
+和随机生成；生成的值需要同时写入设备。
+
+“示例流程”页右侧提供 `Batch test settings` 按钮，可配置安全流程和完整流程
+的每个可选步骤：读取区间地址/大小、复位类型、擦除/写入地址和大小、超时、
+广播数据、工厂测试开关等。点击 `Save` 后写入当前用户设置文件，下次启动自动
+恢复；完整流程的工程加载/切换使用“脱机编程”页当前工程参数。
 
 GUI 连接栏右侧提供语言选择，首次启动自动匹配系统语言，支持 48 种语言，包括
 英语、简体中文、繁体中文、日语、韩语、越南语、泰语、印度尼西亚语、马来语、
@@ -378,7 +396,7 @@ dist\powerwriter_at_gui_python.exe --smoke-test :: 自检后退出，返回码 0
 python -m unittest discover -s tests -v
 ```
 
-当前共 64 项测试，覆盖：
+当前共 77 项测试，覆盖：
 
 - C 动态库加载、ABI 版本、回调桥接；
 - 帧解析、CRC、垃圾数据重同步；
@@ -387,7 +405,8 @@ python -m unittest discover -s tests -v
 - 写准备、波特率切换；
 - 离线工程加载、查询、禁用、启动、状态轮询、切换；
 - 广播（有/无应答）、工厂固件；
-- AES128-CBC 加密通信；
+- AES128-CBC 加密通信（默认 Key/IV 与自定义 Key/IV）；
+- CLI 加密参数、十六进制 Key/IV 解析、GUI 加密配置状态；
 - C 核心超时行为（100 ms 超时）；
 - 标准库串口后端与读线程；
 - CLI 参数解析（`--port` 前后两种写法、命令完整性）；
@@ -396,6 +415,7 @@ python -m unittest discover -s tests -v
 - Intel HEX 解析：数据记录、扩展段/线性地址、校验和、重叠检测、多段合并；
 - GUI 多段 HEX 写入、地址自动取自文件、逐段校验；
 - GUI 启动脱机烧录后的自动状态轮询与停止轮询；
+- 批量测试参数：步骤开关、读取/写入地址大小、持久化与恢复；
 - 48 种语言资源完整性、占位符签名、元数据、系统语言检测与保存；
 - **每个 API 的异常返回值注入**：逐一注入设备错误码，验证客户端抛出
   正确的 `PowerWriterATError`、CLI 错误提示、GUI 错误弹窗；
@@ -462,9 +482,10 @@ python -m unittest discover -s tests -v
 4. **固件自定义错误码**：大于 `0x99` 的错误码（例如 0x3F6、0x3FC、
    0x41D）不在开源 `powerwriter_at_error.h` 中，属于设备固件自定义，
    需要结合固件版本/官方软件确认。
-5. **AES 加密**：C 核心编译时已启用 `POWERWRITER_AT_ENCRYPT_ENABLE`，
-   密钥/IV 与 `powerwriter_at_config.h` 一致；只有设备端也启用了 AT
-   加密时才可使用 `--encrypt` / GUI 的加密选项。
+5. **AES 加密**：C 核心编译时已启用 `POWERWRITER_AT_ENCRYPT_ENABLE`。
+   CLI 用 `--encrypt-key` / `--encrypt-iv` 配置 16 字节密钥和 IV；GUI 勾选
+   `AES128-CBC encryption` 后弹出配置对话框。只有设备端也启用了 AT 加密时
+   才可使用；不传 Key/IV 时使用 `powerwriter_at_config.h` 的默认值。
 6. **文件名编码**：PW200/PW300 使用 GBK，PWX1 使用 UTF-8；客户端会根据
    设备 OEM 自动选择，也可用 `--name-encoding` 强制指定。
 7. **破坏性操作**：擦除、写入、写 OptionByte、加载工程、离线烧录会修改
